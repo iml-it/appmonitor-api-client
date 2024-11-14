@@ -1,14 +1,16 @@
 # APPMONITOR API CLIENT
 
-The application monitor is a complementing tool next to the classic system monitoring
+The IML Appmonitor is a complementing tool next to the classic system monitoring
 of servers and its services.
+See <https://github.com/iml-it/appmonitor>
 
 The API can be configured to be accessed anonymous, with basic authentication or hmac hash key.
 
 This repository contains
 
-* a php class to bastract user authentication and simplify fetching application data using a group of tags
-* an example webpage for a customer view with low detail level
+* A php class to bastract user authentication and simplify fetching application data using a group of tags
+* An example webpage for a customer view with low detail level
+* A Bash script using curl
 
 Free software and Open Source from University of Bern :: IML - Institute of Medical Education
 

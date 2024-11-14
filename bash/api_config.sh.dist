@@ -1,0 +1,8 @@
+#!/bin/bash
+
+AM_APIURL="http://localhost:8001"
+AM_APIUSER="api-test"
+AM_APISECRET="tryme"
+
+# AM_APIUSER="api-basic"
+# AM_APIPW="12345678"
