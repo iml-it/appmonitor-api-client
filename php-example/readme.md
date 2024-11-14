@@ -19,7 +19,7 @@ Copy `config.php.dist` to `config.php` (without .dist) and edit connection detai
 * 'user'=>'api-test'
 * 'secret'=>'tryme'
 
-You can creat as many groups as you want. Per group you can define a set of tags to group your applications.
+You can create as many groups as you want. Per group you can define a set of tags to group your applications.
 
 ### Start up
 

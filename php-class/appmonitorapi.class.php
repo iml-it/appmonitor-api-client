@@ -121,6 +121,7 @@ class appmonitorapi
             throw new Exception("Missing configuration key: 'apiurl'");
         }
     }
+
     // ----------------------------------------------------------------------
     // fetch data
     // ----------------------------------------------------------------------
@@ -293,6 +294,7 @@ class appmonitorapi
 
         return $this->fetchData([$sUrl]);
    }
+
     /**
      * Fetch all urls to get upto date monitoring data. It first checks
      * if cache files for the urls are outdated (older than 10 seconds).
