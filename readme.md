@@ -7,7 +7,7 @@ The API can be configured to be accessed anonymous, with basic authentication or
 
 This repository contains
 
-* a php class to bastract user authetication and simplify fetching application data using a group of tags
+* a php class to bastract user authentication and simplify fetching application data using a group of tags
 * an example webpage for a customer view with low detail level
 
 Free software and Open Source from University of Bern :: IML - Institute of Medical Education
