@@ -27,9 +27,9 @@ AM_APISECRET="tryme"
 
 Use the parameter `-h`to get a short help.
 
-```txt
-./api.sh -h
+`./api.sh -h`
 
+```txt
 APPMONITOR API CLIENT :: Bash
 
 SYNTAX
