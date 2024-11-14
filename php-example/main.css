@@ -1,0 +1,106 @@
+:root{
+    --result-0-color: #080;
+    --result-0-bg: #e0f4e0;
+    --result-1-color: #838;
+    --result-1-bg: #e0d0e0;
+    --result-2-color: #850;
+    --result-2-bg: #ed9;
+    --result-3-color: #a33;
+    --result-3-bg: #ebb;
+
+    --body-bg: #f0f0f0;
+    --main-bg: #fff;
+    --main-border: 2px solid rgba(0,0,0,0.1);
+    --main-color: #555;
+    --h1-color: #459;
+    --h1-border-bottom: 2px solid rgba(0,0,0,0.1);
+    --h2-color: #89a;
+}
+/* ---------- tags ---------- */
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--body-bg);
+    color: var(--main-color);
+    margin: 1em 10% 4em;
+}
+
+h1{
+    border-bottom: var(--h1-border-bottom);
+    color: var(--h1-color);
+    margin: 0;
+}
+h2{
+    color: var(--h2-color)
+}
+
+main {
+    background: var(--main-bg);
+    border: var(--main-border);
+    padding: 1em;
+    border-radius: 1em;
+}
+
+/* ---------- boxes ---------- */
+
+.app{
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 0.5em;
+    padding: 0.1em;
+    margin-bottom: 0.2em;
+}
+
+.message{
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin-bottom: 0.2em;
+}
+
+.resultlabel{
+    border-radius: 0.5em 0 0 0.5em;
+    display: inline-block;
+    width: 5em;
+    text-align: center;
+    margin-right: 1em;
+    padding: 0.5em;
+}
+
+/* ---------- result codes ---------- */
+
+.result-0 {
+    background: var(--result-0-bg);
+    color: var(--result-0-color);
+}
+.app.result-0 .resultlabel {
+    color: var(--result-0-bg);
+    background: var(--result-0-color);
+}
+
+.result-1 {
+    background: var(--result-1-bg);
+    color: var(--result-1-color);
+}
+.app.result-1 .resultlabel{
+    color: var(--result-1-bg);
+    background: var(--result-1-color);
+}
+
+.result-2 {
+    background: var(--result-2-bg);
+    color: var(--result-2-color);
+}
+.app.result-2 .resultlabel{
+    color: var(--result-2-bg);
+    background: var(--result-2-color);
+}
+.result-3 {
+    background: var(--result-3-bg);
+    color: var(--result-3-color);
+}
+.app.result-3 .resultlabel{
+    color: var(--result-3-bg);
+    background: var(--result-3-color);
+}
+
+/* ---------- end ---------- */

@@ -1,0 +1,24 @@
+<?php
+
+return [
+
+    'appmonitor'=>[
+        'apiurl'=>'http://localhost/api/v1',
+        'user'=>'api-test',
+        'secret'=>'tryme',    
+    ],
+
+    'gouups'=>[
+        [
+            'label'=>'Live systems (Demo)',
+            'tags'=>['live'],
+            'full'=>false,
+        ],
+        [
+            'label'=>'Monitoring (Demo)',
+            'tags'=>['monitoring'],
+            'full'=>false,
+        ],
+    ],
+
+];
