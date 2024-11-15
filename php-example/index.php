@@ -32,6 +32,7 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL 3.0
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  1.0  axel.hahn@unibe.ch  first lines
+ * 2024-11-15  1.1  axel.hahn@unibe.ch  add showMessage; show total status of a group
  */
 
 require '../php-class/appmonitorapi.class.php';
@@ -81,6 +82,17 @@ function renderApp_lines(array $aAppdata): string
     </div>\n\n";
 }
 
+/**
+ * Show a message
+ * 
+ * @param int $iLevel       Level - see $aReturncodes
+ * @param string $sMessage  Message to show as html code
+ * @return string
+ */
+function showMessage(int $iLevel, string $sMessage): string
+{
+    return "<div class=\"message result-$iLevel\">$sMessage</div>\n\n";
+}
 
 // ----------------------------------------------------------------------
 // MAIN
@@ -88,21 +100,21 @@ function renderApp_lines(array $aAppdata): string
 
 // ----- Init
 $aConfig=include 'config.php';
-$healthmonitor = new appmonitorapi($aConfig['appmonitor']);
+$api = new appmonitorapi($aConfig['appmonitor']);
 
 
 // ----- Loop over group emtries
 foreach($aConfig['gouups'] as $aGroup )
 {
-    $healthmonitor->fetchByTags($aGroup['tags'], $aGroup['full']);
+    $api->fetchByTags($aGroup['tags'], $aGroup['full']);
 
     // --- check errors
-    if ( count($healthmonitor->getErrors()) > 0 ) {
+    if ( count($api->getErrors()) > 0 ) {
         $sMessages.="⚠️ Warning: Currently not all information is available from the monitoring system. The shown status is incomplete.<br><br>";
         if($bShowErrorDetails)
         {
             $sMessages.='<blockquote>';
-            foreach ($healthmonitor->getErrors() as $aError){
+            foreach ($api->getErrors() as $aError){
                 $sMessages.=showMessage(3, "❌ $aError[url]<br>"
                     .($aError['response_header'] ? "<pre>$aError[response_header]</pre>" : "")
                     ."$aError[response_body]$aError[curlerrormsg]");
@@ -112,17 +124,28 @@ foreach($aConfig['gouups'] as $aGroup )
     }
 
     // --- generate output
-    $sOut.="<h2>$aGroup[label]</h2>";
-    foreach($healthmonitor->getApps() as $sAppId)
+    $iResulOfGroup=0;
+    $sOutGroup='';
+    foreach($api->getApps() as $sAppId)
     {
-        $sOut.=renderApp_lines($healthmonitor->getAppData($sAppId))
-            // .'<pre>'.print_r($healthmonitor->getAppData($sAppId), 1).'</pre>'
+        $aAppdata=$api->getAppData($sAppId);
+        $iResulOfGroup=max($iResulOfGroup, $aAppdata['result']);
+        $sOutGroup.=''
+            // for debugging remove next comment
+            // .'<pre>'.print_r($api->getAppData($sAppId), 1).'</pre>'
+            .renderApp_lines($aAppdata)
         ;
     };
+
+    $sOut.="<h2><span class=\"result-$iResulOfGroup\">"
+        .($aReturncodes[$iResulOfGroup] ?? '??')
+        ."</span> $aGroup[label]</h2>"
+        .$sOutGroup
+    ;
 }
 
 
-// --- Legende
+// --- Legend
 if($bShowErrorDetails)
 {
     $sOut.='<br><h2>Visualization of all return codes</h2><br>';
