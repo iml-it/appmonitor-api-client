@@ -21,6 +21,7 @@
 # @license http://www.gnu.org/licenses/gpl-3.0.html GPL 3.0
 # --------------------------------------------------------------------------------
 # 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
+# 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header
 # --------------------------------------------------------------------------------
 
 
@@ -106,8 +107,7 @@ function makeRequest(){
 # --- generate data to hash: method + uri + timestamp; delimited with line break
 data="${apiMethod}
 ${apiRequest}
-${apiTS}
-"
+${apiTS}"
     # these ase non critical data ... it does not show the ${secret}
     if [ "$bDebug" = "1" ]; then
         echo $line
@@ -121,7 +121,7 @@ ${apiTS}
 
     params+=(
       -H "Date: ${apiTS}"
-      -H "Authorization: ${AM_APIUSER:-api}:${myHash}"
+      -H "Authorization: HMAC-SHA1 ${AM_APIUSER:-api}:${myHash}"
     )
 
   else
@@ -145,7 +145,9 @@ ${apiTS}
   curl "${params[@]}" ${AM_APIURL}${apiRequest}
   rc=$?
 
-  test $bDebug = 1 && ( echo; echo "rc=$rc" )
+  test $bDebug = 1 && ( echo; echo "Curl finished with rc=$rc" )
+  test $rc -gt 0 && echo "ERROR: Curl request failed."
+
 }
 
 
