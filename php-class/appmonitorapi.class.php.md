@@ -35,6 +35,7 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL 3.0
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
+ * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
  */
 ```
 
@@ -119,7 +120,7 @@ Get array of all errors while fetching the data.Print its output only in develop
 
 ### 🔹 public setConfig()
 
-Set configuration
+Set configuration.Given values will be verified. It throws an exception if something is wrong.
 
 **Return**: `void`
 
@@ -127,7 +128,7 @@ Set configuration
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> array $aConfig | `array` | configuration array with subkeys                        - apiurl                        - user                        - secret   (for hmac hash)                        - password (for basic auth)
+| \<required\> array $aConfig | `array` | configuration array with subkeys                        - apiurl    string  url of appmonitor api, eg http://localhost/api/v1                        - user      string  username for basic auth or hmac hash                        - secret    string  (for hmac hash)                        - password  string  (for basic auth)                        - ttl       int     time to live in seconds (0 = no caching; max. 60)                        - cachedir  string  path to cache dir
 
 
 
