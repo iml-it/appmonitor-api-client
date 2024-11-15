@@ -33,6 +33,7 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL 3.0
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
+ * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
  */
 class appmonitorapi
 {
@@ -48,7 +49,7 @@ class appmonitorapi
         CURLOPT_FAILONERROR => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_USERAGENT => 'Appmonitor (using curl; see https://github.com/iml-it/appmonitor to install your own monitoring instance;)',
+        CURLOPT_USERAGENT => 'Appmonitor api client 0.2 (see https://github.com/iml-it/appmonitor-api-client/)',
         // CURLMOPT_MAXCONNECTS => 10
     ];
 
@@ -76,6 +77,12 @@ class appmonitorapi
      */
     protected int $iTTL = 15; // default TTL in seconds to prevent DOS on appmonitor
 
+    /**
+     * Cache dir to store api response
+     * @var string
+     */
+    protected string $_sCachedir ='';
+
     // ----------------------------------------------------------------------
     // Init
     // ----------------------------------------------------------------------
@@ -89,29 +96,49 @@ class appmonitorapi
      */
     public function __construct(array $aConfig = [])
     {
+        $this->_sCachedir = sys_get_temp_dir();
         if (count($aConfig)) {
             $this->setConfig($aConfig);
         }
     }
 
     /**
-     * Set configuration
+     * Set configuration.
+     * Given values will be verified. It throws an exception if something is wrong.
+     * 
      * @param array $aConfig  configuration array with subkeys
-     *                         - apiurl
-     *                         - user
-     *                         - secret   (for hmac hash)
-     *                         - password (for basic auth)
+     *                         - apiurl    string  url of appmonitor api, eg http://localhost/api/v1
+     *                         - user      string  username for basic auth or hmac hash
+     *                         - secret    string  (for hmac hash)
+     *                         - password  string  (for basic auth)
+     *                         - ttl       int     time to live in seconds (0 = no caching; max. 60)
+     *                         - cachedir  string  path to cache dir
      * @return void
      */
     public function setConfig(array $aConfig): void
     {
         $this->aConfig = [];
+
+        // ----- apply known values
+
         foreach(['apiurl', 'user', 'secret', 'password'] as $sKey){
             if (isset($aConfig[$sKey])) {
                 $this->aConfig[$sKey] = $aConfig[$sKey];
                 unset($aConfig[$sKey]);
             }
         }
+
+        if(isset($aConfig['ttl'])){
+            $this->iTTL = (int)$aConfig['ttl'];
+            unset($aConfig['ttl']);
+        }
+        if(isset($aConfig['cachedir'])){
+            $this->_sCachedir = $aConfig['cachedir'];
+            unset($aConfig['cachedir']);
+        }
+
+        // ----- verifications
+
         if(count($aConfig)) {
             echo "ERROR in ".__METHOD__."(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig))."'<br>";
             throw new Exception('Unknown configuration key(s).');
@@ -120,6 +147,16 @@ class appmonitorapi
             echo "ERROR in ".__METHOD__."(array)<br>Missing configuration key: 'apiurl'<br>";
             throw new Exception("Missing configuration key: 'apiurl'");
         }
+
+        if($this->iTTL < 0 || $this->iTTL > 60 ){
+            echo "ERROR in ".__METHOD__."(array)<br>'ttl' must be a value between 0 and 60 (seconds).<br>";
+            throw new Exception('Wrong configuration value.');
+        }
+        if(!is_dir($this->_sCachedir)){
+            echo "ERROR in ".__METHOD__."(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'<br>";
+            throw new Exception('Wrong configuration value.');
+        }
+
     }
 
     // ----------------------------------------------------------------------
@@ -133,7 +170,7 @@ class appmonitorapi
      */
     protected function _getCachefile(string $sUrl): string
     {
-        return __DIR__ . '/../data/' . md5($sUrl) . '.data';
+        return $this->_sCachedir . '/' . md5($sUrl) . '.data';
     }
 
     /**
@@ -224,12 +261,12 @@ class appmonitorapi
 
                 $sMyHash = base64_encode(hash_hmac(
                     "sha1",
-                    "{$sMethod}\n{$sRequest}\n{$apiTS}\n",
+                    "{$sMethod}\n{$sRequest}\n{$apiTS}",
                     $this->aConfig['secret']
                 ));
 
                 $this->curl_opts[CURLOPT_HTTPHEADER][] = "Date: $apiTS";
-                $this->curl_opts[CURLOPT_HTTPHEADER][] = "Authorization: " . $this->aConfig['user'] . ":$sMyHash";
+                $this->curl_opts[CURLOPT_HTTPHEADER][] = "Authorization: HMAC-SHA1 " . $this->aConfig['user'] . ":$sMyHash";
             }
 
             $curl_arr[$sKey] = curl_init($sUrl);
