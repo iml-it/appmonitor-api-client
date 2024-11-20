@@ -28,7 +28,7 @@
  * SERVICING, REPAIR OR CORRECTION.<br>
  * <br>
  * --------------------------------------------------------------------------------<br>
- * @version v0.1
+ * @version v0.4
  * @author Axel Hahn
  * @link https://github.com/iml-it/appmonitor-api-client
  * @license GPL
@@ -37,6 +37,7 @@
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
  * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
+ * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
  */
 ```
 
@@ -61,7 +62,7 @@ Constructor
 
 ### 🔹 public fetchByTags()
 
-Get Date from API by given list of tags
+Get application data of all matching apps by given list of tags@see getErrors()
 
 **Return**: `bool`
 
@@ -79,13 +80,31 @@ Fetch all urls to get upto date monitoring data. It first checksif cache files f
 Then, all received data is looped over to extract metadata perapplication, which is stored in the internal _aData array.It returns true if all data for all apps were fetched.
 
 
-**Return**: `bool`
+**Return**: `array`
 
 **Parameters**: **1**
 
 | Parameter | Type | Description
 |--         |--    |--
 | \<required\> array $aRelUrls | `array` | array of relative urls to fetch
+
+
+### 🔹 public getAllApps()
+
+Get an array of all app ids as array. Each array value has - a key - the pplication id and - the subkeys "website" and "url".It returns false if the request faailed. You can use getErrors() to seefull data of the response@see getErrors()
+
+**Return**: `array|bool`
+
+**Parameters**: **0**
+
+
+### 🔹 public getAllTags()
+
+Get a flat list of tags as array.It returns false if the request faailed. You can use getErrors() to seefull data of the response@see getErrors()
+
+**Return**: `array|bool`
+
+**Parameters**: **0**
 
 
 ### 🔹 public getAppChecks()
@@ -151,9 +170,18 @@ Get a list of all app keys in the result setUse this to loop over all fetched ap
 
 ### 🔹 public getErrors()
 
-Get array of all errors while fetching the data.Print its output only in development environment only.
+Get array of all errors of the last requestWarning: Print its output only in development environment only.
 
 **Return**: `array`
+
+**Parameters**: **0**
+
+
+### 🔹 public getGroupResult()
+
+Get the worst app result in the group
+
+**Return**: `int`
 
 **Parameters**: **0**
 

@@ -26,7 +26,7 @@
  * SERVICING, REPAIR OR CORRECTION.<br>
  * <br>
  * --------------------------------------------------------------------------------<br>
- * @version v0.1
+ * @version v0.4
  * @author Axel Hahn
  * @link https://github.com/iml-it/appmonitor-api-client
  * @license GPL
@@ -35,6 +35,7 @@
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
  * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
+ * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
  */
 class appmonitorapi
 {
@@ -82,7 +83,7 @@ class appmonitorapi
      * Cache dir to store api response
      * @var string
      */
-    protected string $_sCachedir ='';
+    protected string $_sCachedir = '';
 
     // ----------------------------------------------------------------------
     // Init
@@ -122,39 +123,39 @@ class appmonitorapi
 
         // ----- apply known values
 
-        foreach(['apiurl', 'user', 'secret', 'password'] as $sKey){
+        foreach (['apiurl', 'user', 'secret', 'password'] as $sKey) {
             if (isset($aConfig[$sKey])) {
                 $this->aConfig[$sKey] = $aConfig[$sKey];
                 unset($aConfig[$sKey]);
             }
         }
 
-        if(isset($aConfig['ttl'])){
-            $this->iTTL = (int)$aConfig['ttl'];
+        if (isset($aConfig['ttl'])) {
+            $this->iTTL = (int) $aConfig['ttl'];
             unset($aConfig['ttl']);
         }
-        if(isset($aConfig['cachedir'])){
+        if (isset($aConfig['cachedir'])) {
             $this->_sCachedir = $aConfig['cachedir'];
             unset($aConfig['cachedir']);
         }
 
         // ----- verifications
 
-        if(count($aConfig)) {
-            echo "ERROR in ".__METHOD__."(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig))."'<br>";
+        if (count($aConfig)) {
+            echo "ERROR in " . __METHOD__ . "(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig)) . "'<br>";
             throw new Exception('Unknown configuration key(s).');
         }
-        if(!isset($this->aConfig['apiurl'])){
-            echo "ERROR in ".__METHOD__."(array)<br>Missing configuration key: 'apiurl'<br>";
+        if (!isset($this->aConfig['apiurl'])) {
+            echo "ERROR in " . __METHOD__ . "(array)<br>Missing configuration key: 'apiurl'<br>";
             throw new Exception("Missing configuration key: 'apiurl'");
         }
 
-        if($this->iTTL < 0 || $this->iTTL > 60 ){
-            echo "ERROR in ".__METHOD__."(array)<br>'ttl' must be a value between 0 and 60 (seconds).<br>";
+        if ($this->iTTL < 0 || $this->iTTL > 60) {
+            echo "ERROR in " . __METHOD__ . "(array)<br>'ttl' must be a value between 0 and 60 (seconds).<br>";
             throw new Exception('Wrong configuration value.');
         }
-        if(!is_dir($this->_sCachedir)){
-            echo "ERROR in ".__METHOD__."(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'<br>";
+        if (!is_dir($this->_sCachedir)) {
+            echo "ERROR in " . __METHOD__ . "(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'<br>";
             throw new Exception('Wrong configuration value.');
         }
 
@@ -214,6 +215,7 @@ class appmonitorapi
      *   - 'url'              {string} url
      *   - 'response_header'  {string} http response header
      *   - 'response_body'    {string} http response body
+     *   - 'response_array'   {array}  Json decoded response body
      *   - 'curlinfo'         {array}  curl request infos
      *   - 'curlerrorcode'    {int}    curl error code
      *   - 'curlerrormsg'     {string} curl error message
@@ -285,6 +287,7 @@ class appmonitorapi
             while ($info = curl_multi_info_read($master)) {
             }
         } while ($running);
+
         // get results
         foreach ($aUrls as $sKey => $sUrl) {
             $sHeader = '';
@@ -298,6 +301,7 @@ class appmonitorapi
                 'url' => $sUrl,
                 'response_header' => $sHeader,
                 'response_body' => $sBody,
+                'response_array' => json_decode($sBody, 1),
                 // 'curlinfo' => curl_getinfo($curl_arr[$sKey]),
                 'curlerrorcode' => curl_errno($curl_arr[$sKey]),
                 'curlerrormsg' => curl_error($curl_arr[$sKey]),
@@ -312,26 +316,58 @@ class appmonitorapi
     }
 
     /**
-     * Get Date from API by given list of tags
+     * Get application data of all matching apps by given list of tags
+     * 
+     * @see getErrors()
      * 
      * @param array $aTags
      * @param bool $bFull
      * @return bool
      */
-    public function fetchByTags(array $aTags=[], bool $bFull=false): bool
+    public function fetchByTags(array $aTags = [], bool $bFull = false): bool
     {
         // we need minumum one tag
-        if(!count($aTags)) {
+        if (!count($aTags)) {
             return false;
         }
+        $this->_aData = [];
 
-        $sUrl='/apps/tags/'
-            .implode(',', $aTags)
-            .($bFull ? '/all' : '/meta')
-            ;
+        $sUrl = '/apps/tags/'
+            . implode(',', $aTags)
+            . ($bFull ? '/all' : '/meta')
+        ;
 
-        return $this->fetchData([$sUrl]);
-   }
+        $aData = $this->fetchData([$sUrl]);
+
+        // loop over all results to extract metadata per application
+        foreach ($aData as $aResult) {
+
+            if (is_array($aResult['response_array'])) {
+
+                $aMonitorData = $aResult['response_array'];
+                foreach ($aMonitorData as $sKey => $aAppResult) {
+                    if (isset($aAppResult['website'])) {
+                        // fetch with "/meta"
+                        $sDatsaKey = $aAppResult['website'] . '__' . $sKey;
+                        $this->_aData[$sDatsaKey] = [
+                            'meta' => $aAppResult,
+                        ];
+                    } else if (isset($aAppResult['meta']['website'])) {
+                        // fetch with "/all"
+                        $sDatsaKey = $aAppResult['meta']['website'] . '__' . $sKey;
+                        $this->_aData[$sDatsaKey] = $aAppResult;
+                    } else {
+                        $this->_aErrors[] = array_merge(['errormessage' => "No key 'website' or 'meta -> website' was found in app $sKey"], $aResult);
+                    }
+                }
+            }
+        }
+
+        // order by app name
+        ksort($this->_aData);
+
+        return !!count($this->_aErrors);
+    }
 
     /**
      * Fetch all urls to get upto date monitoring data. It first checks
@@ -347,13 +383,11 @@ class appmonitorapi
      * @param  array  $aRelUrls  array of relative urls to fetch
      * @return bool Success
      */
-    public function fetchData(array $aRelUrls): bool
+    public function fetchData(array $aRelUrls): array
     {
-        $this->_aData = [];
-        $this->_aErrors = [];
-
         $aUrls = [];
         $aCached = [];
+        $this->_aErrors = [];
 
         foreach ($aRelUrls as $sUrl) {
             $sFullUrl = $this->aConfig['apiurl'] . $sUrl;
@@ -378,42 +412,78 @@ class appmonitorapi
 
         // fetch outdated http data
         $aData = array_merge($aData, $this->_multipleHttpGet($aUrls));
+        return $aData;
+    }
 
-        // loop over all results to extract metadata per application
-        foreach ($aData as $aResult) {
-
-            $sMonitorData = $aResult['response_body'] ?? '';
-            if ($sMonitorData) {
-                $aMonitorData = json_decode($sMonitorData, 1);
-                foreach ($aMonitorData as $sKey => $aAppResult) {
-                    if (isset($aAppResult['website'])) {
-                        // fetch with "/meta"
-                        $sDatsaKey=$aAppResult['website'] . '__' . $sKey;
-                        $this->_aData[$sDatsaKey] = [
-                            'meta' => $aAppResult,
-                        ];
-                    } else if (isset($aAppResult['meta']['website'])) {
-                        // fetch with "/all"
-                        $sDatsaKey=$aAppResult['meta']['website'] . '__' . $sKey;
-                        $this->_aData[$sDatsaKey] = $aAppResult;
-                    } 
-                    else {
-                        $this->_aErrors[] = array_merge(['errormessage'=>"No key 'website' or 'meta -> website' was found in app $sKey"], $aResult);
-                    }                    
-                }
-            } else {
-                $this->_aErrors[] = $aResult;
-            }
-        }
-
-        // order by app name
-        ksort($this->_aData);
-
-        return !!count($this->_aErrors);
+    /**
+     * Get array of all errors of the last request
+     * Warning: Print its output only in development environment only.
+     * 
+     * @return array
+     */
+    public function getErrors(): array
+    {
+        return $this->_aErrors;
     }
 
     // ----------------------------------------------------------------------
-    // return results
+    // get tags
+    // ----------------------------------------------------------------------
+
+    /**
+     * Get an array of all app ids as array. 
+     * Each array value has 
+     * - a key - the pplication id and 
+     * - the subkeys "website" and "url".
+     * 
+     * It returns false if the request faailed. You can use getErrors() to see
+     * full data of the response
+     * 
+     * @see getErrors()
+     * 
+     * @return bool|array
+     */
+    public function getAllApps(): bool|array
+    {
+        $aData = $this->fetchData(['/apps/id']);
+
+        // because we use just one url there is a single result only and we
+        // can access index "0"
+        $aJson = $aData[0]['response_array'];
+        if (is_array($aJson)) {
+            return $aJson;
+        }
+        $this->_aErrors[] = $aData;
+
+        return false;
+    }
+
+    /**
+     * Get a flat list of tags as array.
+     * It returns false if the request faailed. You can use getErrors() to see
+     * full data of the response
+     * 
+     * @see getErrors()
+     * 
+     * @return bool|array
+     */
+    public function getAllTags(): bool|array
+    {
+        $aData = $this->fetchData(['/apps/tags']);
+
+        // because we use just one url there is a single result only and we
+        // can access index "0"
+        $aJson = $aData[0]['response_array'];
+        if (isset($aJson['tags'])) {
+            return $aJson['tags'];
+        }
+        $this->_aErrors[] = $aData;
+
+        return false;
+    }
+
+    // ----------------------------------------------------------------------
+    // return results for fetched apps
     // ----------------------------------------------------------------------
 
     /**
@@ -488,13 +558,19 @@ class appmonitorapi
     }
 
     /**
-     * Get array of all errors while fetching the data.
-     * Print its output only in development environment only.
+     * Get the worst app result in the group
      * 
-     * @return array
+     * @return int
      */
-    public function getErrors(): array
+    public function getGroupResult(): int
     {
-        return $this->_aErrors;
+        if (!count($this->_aData)) {
+            return 1; // unknown
+        }
+        $iResult = 0;
+        foreach ($this->_aData as $aResult) {
+            $iResult = max($iResult, $aResult['meta']['result']);
+        }
+        return $iResult;
     }
 }
