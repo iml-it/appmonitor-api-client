@@ -36,6 +36,7 @@
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
+ * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
  */
 ```
 
@@ -87,9 +88,9 @@ Then, all received data is looped over to extract metadata perapplication, which
 | \<required\> array $aRelUrls | `array` | array of relative urls to fetch
 
 
-### 🔹 public getAppData()
+### 🔹 public getAppChecks()
 
-Get an array of app metadata of a single app.You need to get the list of all applications first.@see getApps()
+Get an array of checks and their results by a given app id.Get an array of app meta data by a given app id.You need to get the list of all applications first to know the ID.@see getApps()
 
 **Return**: `array`
 
@@ -97,7 +98,46 @@ Get an array of app metadata of a single app.You need to get the list of all app
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> string $sApp | `string` | 
+| \<required\> string $sApp | `string` | App ID
+
+
+### 🔹 public getAppData()
+
+Get an array of all fetched app data by a given app id.You need to get the list of all applications first to know the ID.@see getApps()
+
+**Return**: `array`
+
+**Parameters**: **1**
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> string $sApp | `string` | App ID
+
+
+### 🔹 public getAppMeta()
+
+Get an array of app meta data by a given app id.You need to get the list of all applications first to know the ID.@see getApps()
+
+**Return**: `array`
+
+**Parameters**: **1**
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> string $sApp | `string` | App ID
+
+
+### 🔹 public getAppResult()
+
+Get an array of result meta infos by a given app id.This information is available with full fetches only.You need to get the list of all applications first to know the ID.@see getApps()
+
+**Return**: `array`
+
+**Parameters**: **1**
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> string $sApp | `string` | App ID
 
 
 ### 🔹 public getApps()

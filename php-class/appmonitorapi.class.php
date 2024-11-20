@@ -34,6 +34,7 @@
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
+ * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
  */
 class appmonitorapi
 {
@@ -383,16 +384,22 @@ class appmonitorapi
 
             $sMonitorData = $aResult['response_body'] ?? '';
             if ($sMonitorData) {
-                $bOK = false;
                 $aMonitorData = json_decode($sMonitorData, 1);
                 foreach ($aMonitorData as $sKey => $aAppResult) {
                     if (isset($aAppResult['website'])) {
-                        $this->_aData[$aAppResult['website'] . '__' . $sKey] = $aAppResult;
-                        $bOK = true;
-                    }
-                }
-                if (!$bOK) {
-                    $this->_aErrors[] = $aResult;
+                        // fetch with "/meta"
+                        $sDatsaKey=$aAppResult['website'] . '__' . $sKey;
+                        $this->_aData[$sDatsaKey] = [
+                            'meta' => $aAppResult,
+                        ];
+                    } else if (isset($aAppResult['meta']['website'])) {
+                        // fetch with "/all"
+                        $sDatsaKey=$aAppResult['meta']['website'] . '__' . $sKey;
+                        $this->_aData[$sDatsaKey] = $aAppResult;
+                    } 
+                    else {
+                        $this->_aErrors[] = array_merge(['errormessage'=>"No key 'website' or 'meta -> website' was found in app $sKey"], $aResult);
+                    }                    
                 }
             } else {
                 $this->_aErrors[] = $aResult;
@@ -423,16 +430,61 @@ class appmonitorapi
     }
 
     /**
-     * Get an array of app metadata of a single app.
-     * You need to get the list of all applications first.
+     * Get an array of all fetched app data by a given app id.
+     * You need to get the list of all applications first to know the ID.
      * 
      * @see getApps()
      * 
+     * @param  string  $sApp  App ID
      * @return array
      */
     public function getAppData(string $sApp): array
     {
         return $this->_aData[$sApp] ?? [];
+    }
+
+    /**
+     * Get an array of app meta data by a given app id.
+     * You need to get the list of all applications first to know the ID.
+     * 
+     * @see getApps()
+     * 
+     * @param  string  $sApp  App ID
+     * @return array
+     */
+    public function getAppMeta(string $sApp): array
+    {
+        return $this->_aData[$sApp]['meta'] ?? [];
+    }
+
+    /**
+     * Get an array of checks and their results by a given app id.
+     * Get an array of app meta data by a given app id.
+     * You need to get the list of all applications first to know the ID.
+     * 
+     * @see getApps()
+     * 
+     * @param  string  $sApp  App ID
+     * @return array
+     */
+    public function getAppChecks(string $sApp): array
+    {
+        return $this->_aData[$sApp]['checks'] ?? [];
+    }
+
+    /**
+     * Get an array of result meta infos by a given app id.
+     * This information is available with full fetches only.
+     * You need to get the list of all applications first to know the ID.
+     * 
+     * @see getApps()
+     * 
+     * @param  string  $sApp  App ID
+     * @return array
+     */
+    public function getAppResult(string $sApp): array
+    {
+        return $this->_aData[$sApp]['result'] ?? [];
     }
 
     /**
