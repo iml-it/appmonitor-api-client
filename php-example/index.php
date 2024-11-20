@@ -138,8 +138,9 @@ foreach($aConfig['groups'] as $aGroup )
         ;
     };
 
+    $iResulOfGroup=$api->getGroupResult();
     $sOut.="<h2><span class=\"result-$iResulOfGroup\">"
-        .($aReturncodes[$api->getGroupResult()] ?? '??')
+        .($aReturncodes[$iResulOfGroup] ?? '??')
         ."</span> $aGroup[label]</h2>"
         .$sOutGroup
     ;
