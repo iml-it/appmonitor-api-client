@@ -33,6 +33,7 @@
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  1.0  axel.hahn@unibe.ch  first lines
  * 2024-11-15  1.1  axel.hahn@unibe.ch  add showMessage; show total status of a group
+ * 2024-11-20  1.2  axel.hahn@unibe.ch  use getAppMeta instead of getAppData; update output of errror messages
  */
 
 require '../php-class/appmonitorapi.class.php';
@@ -116,8 +117,11 @@ foreach($aConfig['groups'] as $aGroup )
             $sMessages.='<blockquote>';
             foreach ($api->getErrors() as $aError){
                 $sMessages.=showMessage(3, "❌ $aError[url]<br>"
+                    .($aError['errormessage'] ? "<strong>$aError[errormessage]</strong>" : "")
+                    .($aError["curlerrormsg"] ? "Curl error: $aError[curlerrormsg]<br>" : "")
                     .($aError['response_header'] ? "<pre>$aError[response_header]</pre>" : "")
-                    ."$aError[response_body]$aError[curlerrormsg]");
+                    ."$aError[response_body]"
+                );
             }
             $sMessages.='</blockquote><br>';
         }
@@ -128,11 +132,11 @@ foreach($aConfig['groups'] as $aGroup )
     $sOutGroup='';
     foreach($api->getApps() as $sAppId)
     {
-        $aAppdata=$api->getAppData($sAppId);
+        $aAppdata=$api->getAppMeta($sAppId);
         $iResulOfGroup=max($iResulOfGroup, $aAppdata['result']);
         $sOutGroup.=''
             // for debugging remove next comment
-            // .'<pre>'.print_r($api->getAppData($sAppId), 1).'</pre>'
+            // .'<pre>'.print_r($aAppdata, 1).'</pre>'
             .renderApp_lines($aAppdata)
         ;
     };
