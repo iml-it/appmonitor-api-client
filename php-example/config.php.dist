@@ -12,7 +12,7 @@ return [
 
     ],
 
-    'gouups'=>[
+    'groups'=>[
         [
             'label'=>'Live systems (Demo)',
             'tags'=>['live'],

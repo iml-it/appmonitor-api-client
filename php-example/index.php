@@ -104,7 +104,7 @@ $api = new appmonitorapi($aConfig['appmonitor']);
 
 
 // ----- Loop over group emtries
-foreach($aConfig['gouups'] as $aGroup )
+foreach($aConfig['groups'] as $aGroup )
 {
     $api->fetchByTags($aGroup['tags'], $aGroup['full']);
 
