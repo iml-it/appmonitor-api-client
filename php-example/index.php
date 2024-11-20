@@ -103,7 +103,6 @@ function showMessage(int $iLevel, string $sMessage): string
 $aConfig=include 'config.php';
 $api = new appmonitorapi($aConfig['appmonitor']);
 
-
 // ----- Loop over group emtries
 foreach($aConfig['groups'] as $aGroup )
 {
@@ -128,12 +127,10 @@ foreach($aConfig['groups'] as $aGroup )
     }
 
     // --- generate output
-    $iResulOfGroup=0;
     $sOutGroup='';
     foreach($api->getApps() as $sAppId)
     {
         $aAppdata=$api->getAppMeta($sAppId);
-        $iResulOfGroup=max($iResulOfGroup, $aAppdata['result']);
         $sOutGroup.=''
             // for debugging remove next comment
             // .'<pre>'.print_r($aAppdata, 1).'</pre>'
@@ -142,7 +139,7 @@ foreach($aConfig['groups'] as $aGroup )
     };
 
     $sOut.="<h2><span class=\"result-$iResulOfGroup\">"
-        .($aReturncodes[$iResulOfGroup] ?? '??')
+        .($aReturncodes[$api->getGroupResult()] ?? '??')
         ."</span> $aGroup[label]</h2>"
         .$sOutGroup
     ;
