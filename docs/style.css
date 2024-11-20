@@ -1,0 +1,336 @@
+/*
+    override css elements of daux.io blue theme
+    version 2024-10-31
+*/
+:root {
+    /* Axels Overrides */
+    --color-text: #234;
+    --link-color: #228;
+    --brand-color: var(--color-text);
+    --brand-background: var(--body-background);
+    --code-tag-background-color: #f0f3f3;
+    --code-tag-border-color: #dee;
+    --code-tag-box-shadow: none;
+    --hr-color: none;
+    --pager-background-color: #f8fafa;
+    --pager-border-color: none;
+    --search-field-background: none;
+    --search-field-border-color: none;
+    --sidebar-background: var(--body-background);
+    --sidebar-border-color: none;
+    --sidebar-link-active-background: #f0f4f6;
+    --toc--inner-border-color: none;
+    /* Axels custom values */
+    --axel_bg-toc: #f8fafa;
+    --axel_bg-toc-head: #f8f8f8;
+    --axel_brand-background: none;
+    --axel_brand-pre-background: rgb(255, 0, 51);
+    --axel_brand-pre-background-hover: rgb(255, 0, 51);
+    --axel_h1_header: none;
+    --axel_h1: #111;
+    --axel_h1-bg: none;
+    --axel_h1-bottom: 3px solid none;
+    --axel_h2: #222;
+    --axel_h2-bg: none;
+    --axel_h2-bottom: 0px solid #467;
+    --axel_h2-hero-bottom: 2px solid #912;
+    --axel_h3: #333;
+    --axel_h3-bottom: 0px solid #ddd;
+    --axel_h4: #666;
+    --axel_h5: #888;
+    --axel_hero_bg: #faf8f6;
+    --axel_img-border: 2px dashed #ccc;
+    --axel_nav-bg: #fcfcfc;
+    --axel_nav-buttomborder: #ddd;
+    --axel_pre-background: #faf8f6;
+    --axel-th-background: #e0e4e8;
+    --axel-article-nav-border-top: 0px dotted #ddd;
+}
+
+.dark {
+    /* Axels Overrides */
+    --color-text: #c0c0c0;
+    --link-color: #88e;
+    --brand-color: var(--color-text);
+    --brand-background: var(--body-background);
+    --body-background: #101418;
+    --hr-color: none;
+    --code-tag-background-color_: #bcc;
+    --search-field-background: none;
+    --search-field-border-color: none;
+    --sidebar-background: var(--body-background);
+    --sidebar-border-color: none;
+    --sidebar-link-active-background: #333;
+    --sidebar-link-color: var(--link-color);
+    /* Axels custom values */
+    --axel_bg-toc: var(--body-background);
+    --axel_bg-toc-head: #333;
+    --axel_brand-background: none;
+    --axel_brand-pre-background: rgb(255, 0, 51);
+    ;
+    --axel_brand-pre-background-hover: rgb(255, 0, 51);
+    ;
+    --axel_h1_header: none;
+    --axel_h1: #578;
+    --axel_h1-bg: none;
+    --axel_h1-bottom: none;
+    --axel_h2: #467;
+    --axel_h2-bg: none;
+    --axel_h2-bottom: 0px solid #256;
+    --axel_h2-hero-bottom: 2px solid #712;
+    --axel_h3: #589;
+    --axel_h3-bottom: 0px solid #333;
+    --axel_h4: #478;
+    --axel_h5: #278;
+    --axel_hero_bg: #242424;
+    --axel_img-border: 2px dashed #555;
+    --axel_nav-bg: #242424;
+    --axel_nav-buttomborder: #555;
+    --axel_pre-background: #bcc;
+    --axel-th-background: #203038;
+    --axel-article-nav-border-top: 0px dotted #234;
+}
+
+/* ---------- left side ---------- */
+a.Brand::before {
+    background: var(--axel_brand-pre-background);
+    color: #fff;
+    font-family: arial;
+    font-weight: bold;
+    padding: 0.5em 0.3em;
+    content: 'IML';
+    margin-right: 0.4em;
+    float: left;
+}
+
+a.Brand:hover::before {
+    background: var(--axel_brand-pre-background-hover);
+}
+
+a.Brand {
+    background: var(--axel_brand-background);
+    font-size: 200%;
+    height: 4em;
+}
+
+/* ---------- page header: breadcrumb ---------- */
+.Page__header {
+    border: none;
+}
+
+.Page__header a {
+    color: var(--axel_h1_header);
+}
+
+.Page__header h1 {
+    font-size: 1.3em;
+}
+
+/* ---------- page content ---------- */
+.s-content {
+    padding-top: 6em;
+}
+
+/**
+h1::before{color: #aaa;content: 'h1: ';}
+h2::before{color: #aaa;content: 'h2: ';}
+h3::before{color: #aaa;content: 'h3: ';}
+h4::before{color: #aaa;content: 'h4: ';}
+h5::before{color: #aaa;content: 'h5: ';}
+h6::before{color: #aaa;content: 'h6: ';}
+*/
+h2::before{color: #888;content: ': : ';}
+h3::before{color: #ccc;content: '> ';}
+h4::before{color: #ccc;content: '_ ';}
+
+.s-content h1::before{
+    color: #f00;
+    content: 'FEHLER: Keine Überschrift 1 in einer Markdown-Datei für Daux verwenden! Mit H2 beginnen!';
+    content: '!! h1 !! ';
+}
+
+.s-content h1 {
+    background: var(--axel_h1-bg);
+    color: var(--axel_h1);
+    font-size: 200%;
+    font-weight: bold;
+    margin-bottom: 2em;
+    margin-top: 2em;
+    border-bottom: var(--axel_h1-bottom);
+}
+
+.s-content h2 {
+    background: var(--axel_h2-bg);
+    color: var(--axel_h2);
+    font-size: 190%;
+    font-weight: bold;
+    margin-top: 4em;
+    border-bottom: var(--axel_h2-bottom);
+}
+
+.Page__header > h1:first-of-type {
+    margin-top: 0em;
+    margin-left: -1em;
+    padding-left: 1em;
+    position: fixed;
+    min-width: 100%;
+    background: var(--body-background);
+    box-shadow: 0 2em 1em var(--body-background);
+}
+
+h2:first-of-type {
+    margin-top: 0em;
+}
+
+img{
+    border: var(--axel_img-border);
+    border-radius: 1.5em;
+    padding: 0.7em;
+}
+
+.s-content h3 {
+    background: var(--axel_h3-bg);
+    color: var(--axel_h3);
+    font-size: 150%;
+    font-weight: bold;
+    margin-top: 3em;
+    border-bottom: var(--axel_h3-bottom);
+}
+
+
+.s-content > h4 {
+    color: var(--axel_h4);
+    font-size: 140%;
+    font-weight: bold;
+    margin: 2em 0;
+}
+
+.s-content > h5 {
+    color: var(--axel_h5);
+    font-size: 135%;
+    font-weight: bold;
+    margin: 2em 0;
+}
+
+.s-content .TableOfContentsContainer h4 {
+    margin: 1em 0;
+    font-size: 110%;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.3em;
+    font-weight: bold;
+    font-family: Arial;
+}
+ul.TableOfContents a{
+    color: var(--color-text);
+}
+.s-content pre {
+    background: var(--axel_pre-background);
+    border-radius: 0.5em;
+    padding: 1rem;
+}
+
+/* FIX smaller fnt size in tables */
+.s-content table {
+    font-size: 1em;
+}
+
+.s-content table th {
+    background: var(--axel-th-background);
+}
+
+.s-content h3 code {
+    border: none;
+    background: none;
+}
+
+article nav {
+    border-top: var(--axel-article-nav-border-top);
+    margin: 8em 0 5em;
+}
+
+.Pager li>a {
+    padding: 1em 2em;
+}
+
+/* ---------- classes ---------- */
+.required {
+    color: #a42;
+}
+
+.optional {
+    color: #888;
+}
+
+div.hero {
+    background: var(--axel_hero_bg);
+    border-radius: 2em;
+    padding: 5em 2em;
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+div.hero h2 {
+    color: var(--color-text);
+    background: none;
+    border-bottom: var(--axel_h2-hero-bottom);
+    font-size: 300%;
+    margin: 0 0 2em;
+}
+
+/* ---------- TOC ---------- */
+
+.TableOfContentsContainer {
+    background-color: var(--axel_bg-toc);
+    padding: 0.5em;
+}
+
+.s-content .TableOfContentsContainer h4 {
+    background-color: var(--axel_bg-toc-head);
+    border-top-left-radius: 1em;
+    border-bottom: 2px solid var(--axel_bg-toc-bottom-border);
+    font-size: 1.1em;
+    margin: 0;
+    padding: 0.3em;
+    display: none;
+}
+
+.TableOfContentsContainer__content {
+    border-width: 0px;
+    font-size: 0.5em;
+    height: inherit; 
+    overflow: auto;
+}
+
+ul.TableOfContents ul {
+    list-style-type: none;
+    padding-left: 1em;
+}
+
+.TableOfContents a:hover{
+    text-decoration: underline;
+}
+
+@media(min-width:1700px) {
+    .TableOfContentsContainer {
+        background: none;
+        position: fixed;
+        right: 2em;
+        top: 4em;
+        height: 90%;
+    }
+}
+
+/* ----- Icons on links --- */
+
+.EditOn a::before{
+    content: '✏️ ';
+}
+
+.Links a::before {
+    content: '🌐 ';
+}
+
+.Links a[href^="https://os-docs.iml.unibe.ch"]::before {
+    content: '📗 ';
+}

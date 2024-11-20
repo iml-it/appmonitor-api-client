@@ -16,4 +16,10 @@ Free software and Open Source from University of Bern :: IML - Institute of Medi
 
 📄 Source: <https://github.com/iml-it/appmonitor-api-client> \
 📜 License: GNU GPL 3.0 \
-📗 Docs: TODO
+📗 Docs: TODO; see readme.md in the subfolders so far
+
+## Screenshot
+
+PHP example page
+
+![alt text](docs/images/php-example-01.png)
