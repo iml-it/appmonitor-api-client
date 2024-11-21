@@ -18,8 +18,26 @@ Free software and Open Source from University of Bern :: IML - Institute of Medi
 📜 License: GNU GPL 3.0 \
 📗 Docs: TODO; see readme.md in the subfolders so far
 
-## Screenshot
+## Screenshots
 
-PHP example page
+### PHP example page
 
-![alt text](docs/images/php-example-01.png)
+You can display multiple application groups using different tag combinations.
+
+![PHP example page](docs/images/php-example-01.png)
+
+### Bash client
+
+The bash client uses curl and suports
+
+* anonymous access
+* basic authentication
+* HMAC hashing with a shared secret
+
+You can request an api url to get the JSON response. This example fetches the existing tags:
+
+![Bash client requests existing tags](docs/images/bash-example-tags.png)
+
+With parameter `-d` you can debug your request for troubleshooting. You see the used curl parameters and http response header:
+
+![Bash client with debug mode](docs/images/bash-example-tags-with-debugging.png)
