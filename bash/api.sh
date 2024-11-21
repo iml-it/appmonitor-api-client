@@ -22,10 +22,12 @@
 # --------------------------------------------------------------------------------
 # 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
 # 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header
+# 2024-11-21  0.3  axel.hahn@unibe.ch  exit with returncode of curl command
 # --------------------------------------------------------------------------------
 
 
 bDebug=0
+rc=0
 
 line=-----------------------------------------------------------------------------
 self=$( basename $0 )
@@ -70,6 +72,7 @@ EXAMPLES
 # param  string  optional: secret; default: it will be generated
 #
 # global int     bDebug        (0|1)
+# global int     rc            Returncode of curl
 # global string  AM_APIURL     appmonitor url
 # global string  AM_APIUSER    name of api user
 # global string  AM_APISECRET  secret for hmac hash
@@ -167,5 +170,6 @@ while [[ "$#" -gt 0 ]]; do case $1 in
 esac; done
 
 makeRequest GET $*
+exit $rc
 
 # ----------------------------------------------------------------------
