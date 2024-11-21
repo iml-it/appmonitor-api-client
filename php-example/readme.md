@@ -31,3 +31,7 @@ php -S localhost:9000
 ```
 
 Open `http://localhost:9000` to see the example page in the webbrowser.
+
+### Screenshot
+
+![PHP example page](../docs/images/php-example-01.png)
