@@ -34,8 +34,9 @@
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
- * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
+ * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadata only; add 3 functions to get parts of the app result
  * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
+ * 2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
  */
 class appmonitorapi
 {
@@ -47,11 +48,11 @@ class appmonitorapi
     protected array $curl_opts = [
         CURLOPT_HEADER => true,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 15,
+        CURLOPT_TIMEOUT => 5,
         CURLOPT_FAILONERROR => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_USERAGENT => 'Appmonitor api client 0.2 (see https://github.com/iml-it/appmonitor-api-client/)',
+        CURLOPT_USERAGENT => 'Appmonitor api client 0.5 (see https://github.com/iml-it/appmonitor-api-client/)',
         // CURLMOPT_MAXCONNECTS => 10
     ];
 
