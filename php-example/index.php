@@ -69,16 +69,17 @@ function renderApp_lines(array $aAppdata): string
     global $aReturncodes;
     $sReturn='';
 
-    $iResult=$aAppdata['result'];
+    $iResult=$aAppdata['meta']['result'];
     $sResult=$aReturncodes[$iResult] ?? '??';
-    $sHost=$aAppdata['host'];
-    $sAppname=$aAppdata['website'];
-
+    $sHost=$aAppdata['meta']['host'];
+    $sAppname=$aAppdata['meta']['website'];
+    $sSince="since ".date("Y-m-d H:i", $aAppdata['since']);
     return "<div class=\"app result-$iResult\">
 
         <span class=\"resultlabel\">$sResult</span>
-        <strong>$sAppname</strong>
-        ($sHost)
+        <span class=\"appname\">$sAppname</span>
+        <span class=\"host\">$sHost</span>
+        <span class=\"since\">$sSince</span>
 
     </div>\n\n";
 }
@@ -106,7 +107,7 @@ $api = new appmonitorapi($aConfig['appmonitor']);
 // ----- Loop over group emtries
 foreach($aConfig['groups'] as $aGroup )
 {
-    $api->fetchByTags($aGroup['tags'], $aGroup['full']);
+    $api->fetchByTags($aGroup['tags']);
 
     // --- check errors
     if ( count($api->getErrors()) > 0 ) {
@@ -130,7 +131,7 @@ foreach($aConfig['groups'] as $aGroup )
     $sOutGroup='';
     foreach($api->getApps() as $sAppId)
     {
-        $aAppdata=$api->getAppMeta($sAppId);
+        $aAppdata=$api->getAppData($sAppId);
         $sOutGroup.=''
             // for debugging remove next comment
             // .'<pre>'.print_r($aAppdata, 1).'</pre>'
@@ -154,9 +155,12 @@ if($bShowErrorDetails)
     foreach($aReturncodes as $returncode => $sLabel)
     {
         $sOut.= renderApp_lines([
-            'website' => "Test website",
-            'host' => "srv-$returncode",
-            'result' => $returncode,
+            'meta' => [
+                'website' => "Test website",
+                'host' => "srv-$returncode",
+                'result' => $returncode,                    
+            ],
+            'since' => time(),
         ]);
     }
 }

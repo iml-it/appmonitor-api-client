@@ -16,12 +16,10 @@ return [
         [
             'label'=>'Live systems (Demo)',
             'tags'=>['live'],
-            'full'=>false,
         ],
         [
             'label'=>'Monitoring (Demo)',
             'tags'=>['monitoring'],
-            'full'=>false,
         ],
     ],
 
