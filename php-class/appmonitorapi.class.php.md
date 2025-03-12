@@ -28,7 +28,7 @@
  * SERVICING, REPAIR OR CORRECTION.<br>
  * <br>
  * --------------------------------------------------------------------------------<br>
- * @version v0.4
+ * @version v0.6
  * @author Axel Hahn
  * @link https://github.com/iml-it/appmonitor-api-client
  * @license GPL
@@ -36,8 +36,10 @@
  * --------------------------------------------------------------------------------<br>
  * 2024-11-14  0.1  axel.hahn@unibe.ch  first lines
  * 2024-11-15  0.2  axel.hahn@unibe.ch  update hmac authorization header; add verifications in setConfig(); configure ttl and cachedir
- * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadate only; add 3 functions to get parts of the app result
+ * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadata only; add 3 functions to get parts of the app result
  * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
+ * 2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
+ * 2025-03-12  0.6  axel.hahn@unibe.ch  handle newly added "public" keyword of api, add method getAppResultSince()
  */
 ```
 
@@ -57,8 +59,7 @@ Constructor
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<optional\> array $aConfig = [] | `array` | configuration array with subkeys                        - apiurl                        - user                        - secret
-
+| \<optional\> $aConfig | `array` | configuration array with subkeys                        - apiurl                        - user                        - secret
 
 ### 🔹 public fetchByTags()
 
@@ -70,9 +71,8 @@ Get application data of all matching apps by given list of tags@see getErrors()
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<optional\> array $aTags = [] | `array` | 
-| \<optional\> bool $bFull = false | `bool` | 
-
+| \<optional\> $aTags | `array` | array of tags to collect matching applications
+| \<optional\> $sWhat | `string` | kind of details; one of "public" (default) | "all" | "meta" | "checks"
 
 ### 🔹 public fetchData()
 
@@ -86,8 +86,7 @@ Then, all received data is looped over to extract metadata perapplication, which
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> array $aRelUrls | `array` | array of relative urls to fetch
-
+| \<required\> $aRelUrls | `array` | array of relative urls to fetch
 
 ### 🔹 public getAllApps()
 
@@ -117,8 +116,7 @@ Get an array of checks and their results by a given app id.Get an array of app m
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> string $sApp | `string` | App ID
-
+| \<required\> $sApp | `string` | App ID
 
 ### 🔹 public getAppData()
 
@@ -130,8 +128,7 @@ Get an array of all fetched app data by a given app id.You need to get the list 
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> string $sApp | `string` | App ID
-
+| \<required\> $sApp | `string` | App ID
 
 ### 🔹 public getAppMeta()
 
@@ -143,8 +140,7 @@ Get an array of app meta data by a given app id.You need to get the list of all 
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> string $sApp | `string` | App ID
-
+| \<required\> $sApp | `string` | App ID
 
 ### 🔹 public getAppResult()
 
@@ -156,8 +152,19 @@ Get an array of result meta infos by a given app id.This information is availabl
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> string $sApp | `string` | App ID
+| \<required\> $sApp | `string` | App ID
 
+### 🔹 public getAppResultSince()
+
+Get unix timestamp when the current appstatus was reached.It returns -1 if not found.@see getApps()@see getAppResult()
+
+**Return**: `int`
+
+**Parameters**: **1**
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
 
 ### 🔹 public getApps()
 
@@ -196,10 +203,7 @@ Set configuration.Given values will be verified. It throws an exception if somet
 
 | Parameter | Type | Description
 |--         |--    |--
-| \<required\> array $aConfig | `array` | configuration array with subkeys                        - apiurl    string  url of appmonitor api, eg http://localhost/api/v1                        - user      string  username for basic auth or hmac hash                        - secret    string  (for hmac hash)                        - password  string  (for basic auth)                        - ttl       int     time to live in seconds (0 = no caching; max. 60)                        - cachedir  string  path to cache dir
-
-
-
+| \<required\> $aConfig | `array` | configuration array with subkeys                        - apiurl    string  url of appmonitor api, eg http://localhost/api/v1                        - user      string  username for basic auth or hmac hash                        - secret    string  (for hmac hash)                        - password  string  (for basic auth)                        - ttl       int     time to live in seconds (0 = no caching; max. 60)                        - cachedir  string  path to cache dir
 
 ---
 Generated with Axels PHP class doc parser.

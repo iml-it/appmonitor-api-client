@@ -26,7 +26,7 @@
  * SERVICING, REPAIR OR CORRECTION.<br>
  * <br>
  * --------------------------------------------------------------------------------<br>
- * @version v0.4
+ * @version v0.6
  * @author Axel Hahn
  * @link https://github.com/iml-it/appmonitor-api-client
  * @license GPL
@@ -37,6 +37,7 @@
  * 2024-11-20  0.3  axel.hahn@unibe.ch  handle full data or metadata only; add 3 functions to get parts of the app result
  * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
  * 2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
+ * 2025-03-12  0.6  axel.hahn@unibe.ch  handle newly added "public" keyword of api, add method getAppResultSince()
  */
 class appmonitorapi
 {
@@ -321,11 +322,11 @@ class appmonitorapi
      * 
      * @see getErrors()
      * 
-     * @param array $aTags
-     * @param bool $bFull
+     * @param array  $aTags  array of tags to collect matching applications
+     * @param string $sWhat  kind of details; one of "public" (default) | "all" | "meta" | "checks"
      * @return bool
      */
-    public function fetchByTags(array $aTags = [], bool $bFull = false): bool
+    public function fetchByTags(array $aTags = [], string $sWhat = 'public'): bool
     {
         // we need minumum one tag
         if (!count($aTags)) {
@@ -335,10 +336,10 @@ class appmonitorapi
 
         $sUrl = '/apps/tags/'
             . implode(',', $aTags)
-            . ($bFull ? '/all' : '/meta')
+            . "/$sWhat"
         ;
 
-        $aData = $this->fetchData([$sUrl]);
+        $aData = $this->fetchData([$sUrl]) ?: [];
 
         // loop over all results to extract metadata per application
         foreach ($aData as $aResult) {
@@ -382,7 +383,7 @@ class appmonitorapi
      * It returns true if all data for all apps were fetched.
      *
      * @param  array  $aRelUrls  array of relative urls to fetch
-     * @return bool Success
+     * @return array Success
      */
     public function fetchData(array $aRelUrls): array
     {
@@ -556,6 +557,21 @@ class appmonitorapi
     public function getAppResult(string $sApp): array
     {
         return $this->_aData[$sApp]['result'] ?? [];
+    }
+
+    /**
+     * Get unix timestamp when the current appstatus was reached.
+     * It returns -1 if not found.
+     * 
+     * @see getApps()
+     * @see getAppResult()
+     * 
+     * @param  string  $sApp  App ID
+     * @return int
+     */
+    public function getAppResultSince(string $sApp): int
+    {
+        return $this->_aData[$sApp]['since'] ?? -1;
     }
 
     /**
