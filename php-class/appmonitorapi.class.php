@@ -38,6 +38,7 @@
  * 2024-11-20  0.4  axel.hahn@unibe.ch  add getAllApps, getAllTags, getGroupResult
  * 2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
  * 2025-03-12  0.6  axel.hahn@unibe.ch  handle newly added "public" keyword of api, add method getAppResultSince()
+ * 2026-01-27  0.7  axel.hahn@unibe.ch  improve verification of config values; use error_log()
  */
 class appmonitorapi
 {
@@ -53,7 +54,7 @@ class appmonitorapi
         CURLOPT_FAILONERROR => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_USERAGENT => 'Appmonitor api client 0.5 (see https://github.com/iml-it/appmonitor-api-client/)',
+        CURLOPT_USERAGENT => 'Appmonitor api client 0.7 (see https://github.com/iml-it/appmonitor-api-client/)',
         // CURLMOPT_MAXCONNECTS => 10
     ];
 
@@ -107,6 +108,46 @@ class appmonitorapi
     }
 
     /**
+     * Add an error message that will be written to error_log() 
+     * and into internal error array
+     * 
+     * @see getErrors()
+     * 
+     * @param string $sErrorMessage  error message
+     * @param array $aMoreData       optional: array with response data
+     * @return void
+     */
+    protected function _addError(string $sErrorMessage, array $aMoreData=[]):void
+    {
+        $this->_aErrors[] = [...['errormessage' => $sErrorMessage], ...$aMoreData];
+        error_log(__CLASS__." ERROR: ".$sErrorMessage);
+    }
+
+    /**
+     * Verify configuration and abort on critical error
+     * @throws Exception
+     * @return void
+     */
+    public function verifyConfig(): void{
+        if (!isset($this->aConfig['apiurl'])) {
+            $sError="ERROR in " . __METHOD__ . "(array)<br>Missing configuration key: 'apiurl'";
+            error_log($sError);
+            throw new Exception($sError);
+        }
+
+        if ($this->iTTL < 0 || $this->iTTL > 300) {
+            $sError="ERROR in " . __METHOD__ . "(array)<br>'ttl' must be a value between 0 and 300 (seconds).";
+            error_log($sError);
+            throw new Exception($sError);
+        }
+        if ($this->_sCachedir && !is_dir($this->_sCachedir)) {
+            $sError="ERROR in " . __METHOD__ . "(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'";
+            error_log($sError);
+            throw new Exception($sError);
+        }
+    }
+
+    /**
      * Set configuration.
      * Given values will be verified. It throws an exception if something is wrong.
      * 
@@ -142,25 +183,12 @@ class appmonitorapi
         }
 
         // ----- verifications
-
         if (count($aConfig)) {
-            echo "ERROR in " . __METHOD__ . "(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig)) . "'<br>";
-            throw new Exception('Unknown configuration key(s).');
+            $sError="ERROR in " . __METHOD__ . "(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig))."'";
+            error_log($sError);
+            throw new Exception($sError);
         }
-        if (!isset($this->aConfig['apiurl'])) {
-            echo "ERROR in " . __METHOD__ . "(array)<br>Missing configuration key: 'apiurl'<br>";
-            throw new Exception("Missing configuration key: 'apiurl'");
-        }
-
-        if ($this->iTTL < 0 || $this->iTTL > 60) {
-            echo "ERROR in " . __METHOD__ . "(array)<br>'ttl' must be a value between 0 and 60 (seconds).<br>";
-            throw new Exception('Wrong configuration value.');
-        }
-        if (!is_dir($this->_sCachedir)) {
-            echo "ERROR in " . __METHOD__ . "(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'<br>";
-            throw new Exception('Wrong configuration value.');
-        }
-
+        $this->verifyConfig();
     }
 
     // ----------------------------------------------------------------------
@@ -330,6 +358,7 @@ class appmonitorapi
     {
         // we need minumum one tag
         if (!count($aTags)) {
+            $this->_aErrors[] = ['errormessage' => "No tags. Skip making a request."];
             return false;
         }
         $this->_aData = [];
@@ -359,7 +388,7 @@ class appmonitorapi
                         $sDatsaKey = $aAppResult['meta']['website'] . '__' . $sKey;
                         $this->_aData[$sDatsaKey] = $aAppResult;
                     } else {
-                        $this->_aErrors[] = array_merge(['errormessage' => "No key 'website' or 'meta -> website' was found in app $sKey"], $aResult);
+                        $this->_addError("No key 'website' or 'meta -> website' was found in app $sKey", $aResult);
                     }
                 }
             }
@@ -390,6 +419,7 @@ class appmonitorapi
         $aUrls = [];
         $aCached = [];
         $this->_aErrors = [];
+        $this->verifyConfig();
 
         foreach ($aRelUrls as $sUrl) {
             $sFullUrl = $this->aConfig['apiurl'] . $sUrl;
@@ -408,12 +438,12 @@ class appmonitorapi
                 $myData = unserialize(file_get_contents($sCachefile));
                 $aData[] = $myData;
             } else {
-                echo "DEBUG: Cache file $sCachefile not found for url $sUrl<br>\n";
+                // error_log("DEBUG: Cache file $sCachefile not found for url $sUrl");
             }
         }
 
         // fetch outdated http data
-        $aData = array_merge($aData, $this->_multipleHttpGet($aUrls));
+        $aData = [...$aData, ...$this->_multipleHttpGet($aUrls)];
         return $aData;
     }
 
@@ -499,6 +529,19 @@ class appmonitorapi
     public function getApps(): array
     {
         return array_keys($this->_aData) ?? [];
+    }
+
+    /**
+     * Get an array of all fetched app data by a given app id.
+     * You need to get the list of all applications first to know the ID.
+     * 
+     * @see getApps()
+     * 
+     * @return array
+     */
+    public function getAllAppData(): array
+    {
+        return $this->_aData ?? [];
     }
 
     /**

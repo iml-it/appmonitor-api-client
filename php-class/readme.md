@@ -41,10 +41,12 @@ $aData=$api->fetchByTags('myapp,live', false);
 
 // Output
 if ( count($api->getErrors()) > 0 ) {
-    // show a warning
+    // show all errors
+    echo "Found errors:". PHP_EOL;
+    print_r($api->getErrors());
 }
 
-echo "Status totsal: " . $aReturncodes[$api->getGroupResult()]. PHP_EOL;
+echo "Status total: " . $aReturncodes[$api->getGroupResult()]. PHP_EOL;
 
 // see https://os-docs.iml.unibe.ch/appmonitor/Server/API.html
 print_r($aData);
