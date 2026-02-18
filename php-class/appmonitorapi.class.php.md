@@ -33,7 +33,7 @@ generator: Axels php-classdoc; https://github.com/axelhahn/php-classdoc
  SERVICING, REPAIR OR CORRECTION.<br>
  <br>
  --------------------------------------------------------------------------------<br>
- @version v0.6
+ @version v0.9
  @author Axel Hahn
  @link https://github.com/iml-it/appmonitor-api-client
  @license GPL
@@ -46,6 +46,8 @@ generator: Axels php-classdoc; https://github.com/axelhahn/php-classdoc
  2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
  2025-03-12  0.6  axel.hahn@unibe.ch  handle newly added "public" keyword of api, add method getAppResultSince()
  2026-01-27  0.7  axel.hahn@unibe.ch  improve verification of config values; use error_log()
+ 2026-02-04  0.8  axel.hahn@unibe.ch  hardening using mago
+ 2026-02-18  0.9  axel.hahn@unibe.ch  implement hard result, add last responses, add methods to get basic meta infos
 
 ```
 
@@ -59,7 +61,7 @@ generator: Axels php-classdoc; https://github.com/axelhahn/php-classdoc
 
 Constructor
 
-Line [102]() (7 lines)
+Line [104]() (7 lines)
 
 **Return**: `void`
 
@@ -78,7 +80,7 @@ Get application data of all matching apps by given list of tags
 
  @see getErrors()
 
-Line [357]() (45 lines)
+Line [378]() (43 lines)
 
 **Return**: `bool`
 
@@ -101,7 +103,7 @@ Fetch all urls to get upto date monitoring data. It first checks
 
  It returns true if all data for all apps were fetched.
 
-Line [417]() (32 lines)
+Line [436]() (32 lines)
 
 **Return**: `array`
 
@@ -118,7 +120,7 @@ Get an array of all fetched app data by a given app id.
 
  @see getApps()
 
-Line [542]() (4 lines)
+Line [561]() (4 lines)
 
 **Return**: `array`
 
@@ -136,7 +138,7 @@ Get an array of all app ids as array.
 
  @see getErrors()
 
-Line [478]() (14 lines)
+Line [497]() (14 lines)
 
 **Return**: `array|bool`
 
@@ -150,7 +152,7 @@ Get a flat list of tags as array.
 
  @see getErrors()
 
-Line [502]() (14 lines)
+Line [521]() (14 lines)
 
 **Return**: `array|bool`
 
@@ -164,7 +166,7 @@ Get an array of checks and their results by a given app id.
 
  @see getApps()
 
-Line [585]() (4 lines)
+Line [604]() (4 lines)
 
 **Return**: `array`
 
@@ -181,7 +183,58 @@ Get an array of all fetched app data by a given app id.
 
  @see getApps()
 
-Line [556]() (4 lines)
+Line [575]() (4 lines)
+
+**Return**: `array`
+
+**Parameters**: **1** (required: 1)
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
+
+### 🔹 public getAppHost()
+
+Get hostname where the application runs
+ meta -> host
+
+ @see getApps()
+
+Line [651]() (4 lines)
+
+**Return**: `string`
+
+**Parameters**: **1** (required: 1)
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
+
+### 🔹 public getAppLabel()
+
+Get application name
+ meta -> website
+
+ @see getApps()
+
+Line [637]() (4 lines)
+
+**Return**: `string`
+
+**Parameters**: **1** (required: 1)
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
+
+### 🔹 public getAppLastResponses()
+
+Get hard state of an application
+ It returns an empty list if not found.
+
+ @see getApps()
+
+Line [693]() (4 lines)
 
 **Return**: `array`
 
@@ -198,7 +251,7 @@ Get an array of app meta data by a given app id.
 
  @see getApps()
 
-Line [570]() (4 lines)
+Line [589]() (4 lines)
 
 **Return**: `array`
 
@@ -216,7 +269,7 @@ Get an array of result meta infos by a given app id.
 
  @see getApps()
 
-Line [600]() (4 lines)
+Line [619]() (4 lines)
 
 **Return**: `array`
 
@@ -226,15 +279,49 @@ Line [600]() (4 lines)
 |--         |--    |--
 | \<required\> $sApp | `string` | App ID
 
+### 🔹 public getAppResultHard()
+
+Get hard state of an application
+ It returns RESULT_UNKNOWN if not found.
+
+ @see getApps()
+
+Line [665]() (4 lines)
+
+**Return**: `int`
+
+**Parameters**: **1** (required: 1)
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
+
 ### 🔹 public getAppResultSince()
 
-Get unix timestamp when the current appstatus was reached.
+Get unix timestamp when the current appstatus was reached (hard state).
  It returns -1 if not found.
 
  @see getApps()
  @see getAppResult()
 
-Line [615]() (4 lines)
+Line [708]() (6 lines)
+
+**Return**: `int`
+
+**Parameters**: **1** (required: 1)
+
+| Parameter | Type | Description
+|--         |--    |--
+| \<required\> $sApp | `string` | App ID
+
+### 🔹 public getAppResultSoft()
+
+Get hard state of an application
+ It returns RESULT_UNKNOWN if not found.
+
+ @see getApps()
+
+Line [679]() (4 lines)
 
 **Return**: `int`
 
@@ -251,7 +338,7 @@ Get a list of all app keys in the result set
 
  @see getAppData(<ID>)
 
-Line [529]() (4 lines)
+Line [548]() (4 lines)
 
 **Return**: `array`
 
@@ -262,7 +349,7 @@ Line [529]() (4 lines)
 Get array of all errors of the last request
  Warning: Print its output only in development environment only.
 
-Line [456]() (4 lines)
+Line [475]() (4 lines)
 
 **Return**: `array`
 
@@ -272,7 +359,7 @@ Line [456]() (4 lines)
 
 Get the worst app result in the group
 
-Line [625]() (11 lines)
+Line [720]() (11 lines)
 
 **Return**: `int`
 
@@ -283,7 +370,7 @@ Line [625]() (11 lines)
 Set configuration.
  Given values will be verified. It throws an exception if something is wrong.
 
-Line [163]() (30 lines)
+Line [169]() (35 lines)
 
 **Return**: `void`
 
@@ -304,7 +391,7 @@ Line [163]() (30 lines)
 Verify configuration and abort on critical error
  @throws Exception
 
-Line [131]() (18 lines)
+Line [133]() (22 lines)
 
 **Return**: `void`
 

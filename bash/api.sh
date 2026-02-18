@@ -89,6 +89,7 @@ function makeRequest(){
         -H "Accept: application/json" -H "Content-Type: application/json"
         -X $apiMethod
         -s
+        -k
     )
 
   # local outfile=$( mktemp )
@@ -163,7 +164,7 @@ while [[ "$#" -gt 0 ]]; do case $1 in
     -h|--help)      echo "$USAGE"; exit 0;;
     -d|--debug)   bDebug=1; shift;;
     *) if grep "^-" <<< "$1" >/dev/null ; then
-        echo; echo "ERROR: Unknown parameter: $1"; echo; _showHelp; exit 2
+        echo; echo "ERROR: Unknown parameter: $1; Use -h or --help to show help."; echo; exit 2
        fi
        break;
        ;;

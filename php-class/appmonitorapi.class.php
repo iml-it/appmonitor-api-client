@@ -1,19 +1,20 @@
 <?php
+
 /**
  * ____________________________________________________________________________
- * 
- *  _____ _____ __                   _____         _ _           
- * |     |     |  |      ___ ___ ___|     |___ ___|_| |_ ___ ___ 
+ *
+ *  _____ _____ __                   _____         _ _
+ * |     |     |  |      ___ ___ ___|     |___ ___|_| |_ ___ ___
  * |-   -| | | |  |__   | .'| . | . | | | | . |   | |  _| . |  _|
- * |_____|_|_|_|_____|  |__,|  _|  _|_|_|_|___|_|_|_|_| |___|_|  
- *                          |_| |_|                              
- *                    _                            _                       
- *            ___ ___|_|   ___ ___ ___ _ _ ___ ___| |_                     
- *           | .'| . | |  |  _| -_| . | | | -_|_ -|  _|                    
- *           |__,|  _|_|  |_| |___|_  |___|___|___|_|                      
- *               |_|                |_|                                                                     
+ * |_____|_|_|_|_____|  |__,|  _|  _|_|_|_|___|_|_|_|_| |___|_|
+ *                          |_| |_|
+ *                    _                            _
+ *            ___ ___|_|   ___ ___ ___ _ _ ___ ___| |_
+ *           | .'| . | |  |  _| -_| . | | | -_|_ -|  _|
+ *           |__,|  _|_|  |_| |___|_  |___|___|___|_|
+ *               |_|                |_|
  * ____________________________________________________________________________
- * 
+ *
  * APPMONITOR API CLIENT<br>
  * <br>
  * THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE <br>
@@ -26,7 +27,7 @@
  * SERVICING, REPAIR OR CORRECTION.<br>
  * <br>
  * --------------------------------------------------------------------------------<br>
- * @version v0.6
+ * @version v0.9
  * @author Axel Hahn
  * @link https://github.com/iml-it/appmonitor-api-client
  * @license GPL
@@ -39,10 +40,11 @@
  * 2025-02-19  0.5  axel.hahn@unibe.ch  reduce curl timeout 15 -> 5 sec
  * 2025-03-12  0.6  axel.hahn@unibe.ch  handle newly added "public" keyword of api, add method getAppResultSince()
  * 2026-01-27  0.7  axel.hahn@unibe.ch  improve verification of config values; use error_log()
+ * 2026-02-04  0.8  axel.hahn@unibe.ch  hardening using mago
+ * 2026-02-18  0.9  axel.hahn@unibe.ch  implement hard result, add last responses, add methods to get basic meta infos
  */
 class appmonitorapi
 {
-
     /**
      * Array of curl default option for http requests
      * @var array
@@ -54,7 +56,7 @@ class appmonitorapi
         CURLOPT_FAILONERROR => 0,
         CURLOPT_SSL_VERIFYHOST => 0,
         CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_USERAGENT => 'Appmonitor api client 0.7 (see https://github.com/iml-it/appmonitor-api-client/)',
+        CURLOPT_USERAGENT => 'Appmonitor api client 0.9 (see https://github.com/iml-it/appmonitor-api-client/)',
         // CURLMOPT_MAXCONNECTS => 10
     ];
 
@@ -108,19 +110,19 @@ class appmonitorapi
     }
 
     /**
-     * Add an error message that will be written to error_log() 
+     * Add an error message that will be written to error_log()
      * and into internal error array
-     * 
+     *
      * @see getErrors()
-     * 
+     *
      * @param string $sErrorMessage  error message
      * @param array $aMoreData       optional: array with response data
      * @return void
      */
-    protected function _addError(string $sErrorMessage, array $aMoreData=[]):void
+    protected function _addError(string $sErrorMessage, array $aMoreData = []): void
     {
         $this->_aErrors[] = [...['errormessage' => $sErrorMessage], ...$aMoreData];
-        error_log(__CLASS__." ERROR: ".$sErrorMessage);
+        error_log(__CLASS__ . ' ERROR: ' . $sErrorMessage);
     }
 
     /**
@@ -128,20 +130,24 @@ class appmonitorapi
      * @throws Exception
      * @return void
      */
-    public function verifyConfig(): void{
+    public function verifyConfig(): void
+    {
         if (!isset($this->aConfig['apiurl'])) {
-            $sError="ERROR in " . __METHOD__ . "(array)<br>Missing configuration key: 'apiurl'";
+            $sError = 'ERROR in ' . __METHOD__ . "(array)<br>Missing configuration key: 'apiurl'";
             error_log($sError);
             throw new Exception($sError);
         }
 
         if ($this->iTTL < 0 || $this->iTTL > 300) {
-            $sError="ERROR in " . __METHOD__ . "(array)<br>'ttl' must be a value between 0 and 300 (seconds).";
+            $sError = 'ERROR in ' . __METHOD__ . "(array)<br>'ttl' must be a value between 0 and 300 (seconds).";
             error_log($sError);
             throw new Exception($sError);
         }
         if ($this->_sCachedir && !is_dir($this->_sCachedir)) {
-            $sError="ERROR in " . __METHOD__ . "(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'";
+            $sError =
+                'ERROR in '
+                . __METHOD__
+                . "(array)<br>given directory in 'cachedir' does not exist: '$this->_sCachedir'";
             error_log($sError);
             throw new Exception($sError);
         }
@@ -150,7 +156,7 @@ class appmonitorapi
     /**
      * Set configuration.
      * Given values will be verified. It throws an exception if something is wrong.
-     * 
+     *
      * @param array $aConfig  configuration array with subkeys
      *                         - apiurl    string  url of appmonitor api, eg http://localhost/api/v1
      *                         - user      string  username for basic auth or hmac hash
@@ -178,13 +184,18 @@ class appmonitorapi
             unset($aConfig['ttl']);
         }
         if (isset($aConfig['cachedir'])) {
-            $this->_sCachedir = $aConfig['cachedir'];
+            $this->_sCachedir = (string) $aConfig['cachedir'];
             unset($aConfig['cachedir']);
         }
 
         // ----- verifications
         if (count($aConfig)) {
-            $sError="ERROR in " . __METHOD__ . "(array)<br>Unknown configuration keys: '" . implode("', '", array_keys($aConfig))."'";
+            $sError =
+                'ERROR in '
+                . __METHOD__
+                . "(array)<br>Unknown configuration keys: '"
+                . implode("', '", array_keys($aConfig))
+                . "'";
             error_log($sError);
             throw new Exception($sError);
         }
@@ -208,7 +219,7 @@ class appmonitorapi
     /**
      * Get age of cache file for a given url in seconds.
      * If file does not exist, return TTL*2 seconds
-     * 
+     *
      * @param string  $sUrl  url to lookup its cache file
      * @return int
      */
@@ -218,7 +229,7 @@ class appmonitorapi
         if (file_exists($sCachefile)) {
             return time() - filemtime($sCachefile);
         } else {
-            return $this->iTTL * 2 + 1;
+            return ($this->iTTL * 2) + 1;
         }
     }
 
@@ -226,15 +237,18 @@ class appmonitorapi
      * Helper function for multi_curl_exec
      * hint from kempo19b
      * http://php.net/manual/en/function.curl-multi-select.php
-     * 
+     *
      * @param CurlMultiHandle  $mh             multicurl master handle
-     * @param boolean          $still_running  
+     * @param int          $still_running
      * @return int
      */
-    protected function full_curl_multi_exec(CurlMultiHandle $mh, bool|null &$still_running): int
+    protected function full_curl_multi_exec(CurlMultiHandle $mh, ?int &$still_running): int
     {
+        if (!isset($still_running)) {
+            return CURLM_CALL_MULTI_PERFORM;
+        }
         do {
-            $rv = curl_multi_exec($mh, $still_running);
+            $rv = (int) curl_multi_exec($mh, $still_running);
         } while ($rv == CURLM_CALL_MULTI_PERFORM);
         return $rv;
     }
@@ -262,59 +276,68 @@ class appmonitorapi
 
         // use authentication
         if (
-            isset($this->aConfig['user']) && $this->aConfig['user']
-            && isset($this->aConfig['apipassword']) && $this->aConfig['apipassword']
+            isset($this->aConfig['user'])
+            && (string) $this->aConfig['user']
+            && isset($this->aConfig['apipassword'])
+            && (string) $this->aConfig['apipassword']
         ) {
-            $this->curl_opts[CURLOPT_USERPWD] = $this->aConfig['user'] . ':' . $this->aConfig['apipassword'];
+            $this->curl_opts[CURLOPT_USERPWD] =
+                (string) $this->aConfig['user'] . ':' . (string) $this->aConfig['apipassword'];
         }
 
         // requires php>=5.5:
         if (function_exists('curl_multi_setopt')) {
             // force parallel requests
             curl_multi_setopt($master, CURLMOPT_PIPELINING, 0);
+
             // curl_multi_setopt($master, CURLMOPT_MAXCONNECTS, 50);
         }
 
         $curl_arr = [];
         foreach ($aUrls as $sKey => $sUrl) {
-
             $aBakHeader = $this->curl_opts[CURLOPT_HTTPHEADER] ?? [];
 
             // add HMAC auth if secret was given
             if (
-                isset($this->aConfig['user']) && $this->aConfig['user']
-                && isset($this->aConfig['secret']) && $this->aConfig['secret']
+                isset($this->aConfig['user'])
+                && (string) $this->aConfig['user']
+                && isset($this->aConfig['secret'])
+                && (string) $this->aConfig['secret']
             ) {
-
                 // Date: Thu, 14 Nov 2024 11:12:07 +0000
-                $apiTS = date("r");
-                $sMethod = "GET";
-                $sQuery = parse_url($sUrl, PHP_URL_QUERY);
-                $sRequest = parse_url($sUrl, PHP_URL_PATH) . ($sQuery ? "?$sQuery" : '');
+                $apiTS = date('r');
+                $sMethod = 'GET';
+                $sQuery = parse_url((string) $sUrl, PHP_URL_QUERY);
+                $sRequest = parse_url((string) $sUrl, PHP_URL_PATH) . ($sQuery ? "?$sQuery" : '');
 
                 $sMyHash = base64_encode(hash_hmac(
-                    "sha1",
+                    'sha1',
                     "{$sMethod}\n{$sRequest}\n{$apiTS}",
-                    $this->aConfig['secret']
+                    (string) $this->aConfig['secret'],
                 ));
 
+                $this->curl_opts[CURLOPT_HTTPHEADER] = [];
                 $this->curl_opts[CURLOPT_HTTPHEADER][] = "Date: $apiTS";
-                $this->curl_opts[CURLOPT_HTTPHEADER][] = "Authorization: HMAC-SHA1 " . $this->aConfig['user'] . ":$sMyHash";
+                $this->curl_opts[CURLOPT_HTTPHEADER][] =
+                    'Authorization: HMAC-SHA1 ' . (string) $this->aConfig['user'] . ":$sMyHash";
             }
 
-            $curl_arr[$sKey] = curl_init($sUrl);
-            curl_setopt_array($curl_arr[$sKey], $this->curl_opts);
-            curl_multi_add_handle($master, $curl_arr[$sKey]);
+            $curl_arr[$sKey] = curl_init((string) $sUrl);
+            if (!is_bool($curl_arr[$sKey])) {
+                curl_setopt_array($curl_arr[$sKey], $this->curl_opts);
+                curl_multi_add_handle($master, $curl_arr[$sKey]);
+            }
 
             $this->curl_opts[CURLOPT_HTTPHEADER] = $aBakHeader;
         }
 
         // make all requests
+        $running = 1;
         self::full_curl_multi_exec($master, $running);
         do {
             curl_multi_select($master);
             self::full_curl_multi_exec($master, $running);
-            while ($info = curl_multi_info_read($master)) {
+            while ($info = curl_multi_info_read($master, $iMessages)) {
             }
         } while ($running);
 
@@ -322,24 +345,22 @@ class appmonitorapi
         foreach ($aUrls as $sKey => $sUrl) {
             $sHeader = '';
             $sBody = '';
-            $aResponse = explode("\r\n\r\n", curl_multi_getcontent($curl_arr[$sKey]), 2);
-            list($sHeader, $sBody) = count($aResponse) > 1
-                ? $aResponse
-                : [$aResponse[0], ''];
+            $aResponse = explode("\r\n\r\n", (string) curl_multi_getcontent((object) $curl_arr[$sKey]), 2);
+            list($sHeader, $sBody) = count($aResponse) > 1 ? (array) $aResponse : [$aResponse[0], ''];
 
             $aResult[$sKey] = [
                 'url' => $sUrl,
                 'response_header' => $sHeader,
                 'response_body' => $sBody,
-                'response_array' => json_decode($sBody, 1),
+                'response_array' => json_decode($sBody, true),
                 // 'curlinfo' => curl_getinfo($curl_arr[$sKey]),
-                'curlerrorcode' => curl_errno($curl_arr[$sKey]),
-                'curlerrormsg' => curl_error($curl_arr[$sKey]),
+                'curlerrorcode' => curl_errno((object) $curl_arr[$sKey]),
+                'curlerrormsg' => curl_error((object) $curl_arr[$sKey]),
             ];
-            curl_multi_remove_handle($master, $curl_arr[$sKey]);
+            curl_multi_remove_handle($master, (object) $curl_arr[$sKey]);
 
             // write cache file
-            file_put_contents($this->_getCachefile($sUrl), serialize($aResult[$sKey]));
+            file_put_contents($this->_getCachefile((string) $sUrl), serialize($aResult[$sKey]));
         }
         curl_multi_close($master);
         return $aResult;
@@ -347,9 +368,9 @@ class appmonitorapi
 
     /**
      * Get application data of all matching apps by given list of tags
-     * 
+     *
      * @see getErrors()
-     * 
+     *
      * @param array  $aTags  array of tags to collect matching applications
      * @param string $sWhat  kind of details; one of "public" (default) | "all" | "meta" | "checks"
      * @return bool
@@ -358,37 +379,35 @@ class appmonitorapi
     {
         // we need minumum one tag
         if (!count($aTags)) {
-            $this->_aErrors[] = ['errormessage' => "No tags. Skip making a request."];
+            $this->_aErrors[] = ['errormessage' => 'No tags. Skip making a request.'];
             return false;
         }
         $this->_aData = [];
 
-        $sUrl = '/apps/tags/'
-            . implode(',', $aTags)
-            . "/$sWhat"
-        ;
+        $sUrl = '/apps/tags/' . implode(',', $aTags) . "/$sWhat";
 
         $aData = $this->fetchData([$sUrl]) ?: [];
 
         // loop over all results to extract metadata per application
         foreach ($aData as $aResult) {
-
-            if (is_array($aResult['response_array'])) {
-
-                $aMonitorData = $aResult['response_array'];
+            if (is_array($aResult['response_array'] ?? false)) {
+                $aMonitorData = (array) $aResult['response_array'] ?? false;
                 foreach ($aMonitorData as $sKey => $aAppResult) {
                     if (isset($aAppResult['website'])) {
                         // fetch with "/meta"
-                        $sDatsaKey = $aAppResult['website'] . '__' . $sKey;
+                        $sDatsaKey = (string) $aAppResult['website'] . '__' . $sKey;
                         $this->_aData[$sDatsaKey] = [
                             'meta' => $aAppResult,
                         ];
                     } else if (isset($aAppResult['meta']['website'])) {
                         // fetch with "/all"
-                        $sDatsaKey = $aAppResult['meta']['website'] . '__' . $sKey;
+                        $sDatsaKey = (string) $aAppResult['meta']['website'] . '__' . $sKey;
                         $this->_aData[$sDatsaKey] = $aAppResult;
                     } else {
-                        $this->_addError("No key 'website' or 'meta -> website' was found in app $sKey", $aResult);
+                        $this->_addError(
+                            "No key 'website' or 'meta -> website' was found in app $sKey",
+                            (array) $aResult ?? [],
+                        );
                     }
                 }
             }
@@ -408,7 +427,7 @@ class appmonitorapi
      *
      * Then, all received data is looped over to extract metadata per
      * application, which is stored in the internal _aData array.
-     * 
+     *
      * It returns true if all data for all apps were fetched.
      *
      * @param  array  $aRelUrls  array of relative urls to fetch
@@ -422,7 +441,7 @@ class appmonitorapi
         $this->verifyConfig();
 
         foreach ($aRelUrls as $sUrl) {
-            $sFullUrl = $this->aConfig['apiurl'] . $sUrl;
+            $sFullUrl = (string) $this->aConfig['apiurl'] . (string) $sUrl;
             if ($this->_getCacheAge($sFullUrl) > $this->iTTL) {
                 $aUrls[] = $sFullUrl;
             } else {
@@ -435,7 +454,7 @@ class appmonitorapi
         foreach ($aCached as $sUrl) {
             $sCachefile = $this->_getCachefile($sUrl);
             if (file_exists($sCachefile)) {
-                $myData = unserialize(file_get_contents($sCachefile));
+                $myData = unserialize((string) file_get_contents($sCachefile));
                 $aData[] = $myData;
             } else {
                 // error_log("DEBUG: Cache file $sCachefile not found for url $sUrl");
@@ -450,7 +469,7 @@ class appmonitorapi
     /**
      * Get array of all errors of the last request
      * Warning: Print its output only in development environment only.
-     * 
+     *
      * @return array
      */
     public function getErrors(): array
@@ -463,16 +482,16 @@ class appmonitorapi
     // ----------------------------------------------------------------------
 
     /**
-     * Get an array of all app ids as array. 
-     * Each array value has 
-     * - a key - the pplication id and 
+     * Get an array of all app ids as array.
+     * Each array value has
+     * - a key - the pplication id and
      * - the subkeys "website" and "url".
-     * 
+     *
      * It returns false if the request faailed. You can use getErrors() to see
      * full data of the response
-     * 
+     *
      * @see getErrors()
-     * 
+     *
      * @return bool|array
      */
     public function getAllApps(): bool|array
@@ -481,7 +500,7 @@ class appmonitorapi
 
         // because we use just one url there is a single result only and we
         // can access index "0"
-        $aJson = $aData[0]['response_array'];
+        $aJson = $aData[0]['response_array'] ?? false;
         if (is_array($aJson)) {
             return $aJson;
         }
@@ -494,9 +513,9 @@ class appmonitorapi
      * Get a flat list of tags as array.
      * It returns false if the request faailed. You can use getErrors() to see
      * full data of the response
-     * 
+     *
      * @see getErrors()
-     * 
+     *
      * @return bool|array
      */
     public function getAllTags(): bool|array
@@ -505,9 +524,9 @@ class appmonitorapi
 
         // because we use just one url there is a single result only and we
         // can access index "0"
-        $aJson = $aData[0]['response_array'];
+        $aJson = $aData[0]['response_array'] ?? false;
         if (isset($aJson['tags'])) {
-            return $aJson['tags'];
+            return (array) $aJson['tags'];
         }
         $this->_aErrors[] = $aData;
 
@@ -521,9 +540,9 @@ class appmonitorapi
     /**
      * Get a list of all app keys in the result set
      * Use this to loop over all fetched apps.
-     * 
+     *
      * @see getAppData(<ID>)
-     * 
+     *
      * @return array
      */
     public function getApps(): array
@@ -534,9 +553,9 @@ class appmonitorapi
     /**
      * Get an array of all fetched app data by a given app id.
      * You need to get the list of all applications first to know the ID.
-     * 
+     *
      * @see getApps()
-     * 
+     *
      * @return array
      */
     public function getAllAppData(): array
@@ -547,79 +566,155 @@ class appmonitorapi
     /**
      * Get an array of all fetched app data by a given app id.
      * You need to get the list of all applications first to know the ID.
-     * 
+     *
      * @see getApps()
-     * 
+     *
      * @param  string  $sApp  App ID
      * @return array
      */
     public function getAppData(string $sApp): array
     {
-        return $this->_aData[$sApp] ?? [];
+        return (array) ($this->_aData[$sApp] ?? []);
     }
 
     /**
      * Get an array of app meta data by a given app id.
      * You need to get the list of all applications first to know the ID.
-     * 
+     *
      * @see getApps()
-     * 
+     *
      * @param  string  $sApp  App ID
      * @return array
      */
     public function getAppMeta(string $sApp): array
     {
-        return $this->_aData[$sApp]['meta'] ?? [];
+        return (array) ($this->_aData[$sApp]['meta'] ?? []);
     }
 
     /**
      * Get an array of checks and their results by a given app id.
      * Get an array of app meta data by a given app id.
      * You need to get the list of all applications first to know the ID.
-     * 
+     *
      * @see getApps()
-     * 
+     *
      * @param  string  $sApp  App ID
      * @return array
      */
     public function getAppChecks(string $sApp): array
     {
-        return $this->_aData[$sApp]['checks'] ?? [];
+        return (array) ($this->_aData[$sApp]['checks'] ?? []);
     }
 
     /**
      * Get an array of result meta infos by a given app id.
      * This information is available with full fetches only.
      * You need to get the list of all applications first to know the ID.
-     * 
+     *
      * @see getApps()
-     * 
+     *
      * @param  string  $sApp  App ID
      * @return array
      */
     public function getAppResult(string $sApp): array
     {
-        return $this->_aData[$sApp]['result'] ?? [];
+        return (array) ($this->_aData[$sApp]['result'] ?? []);
+    }
+
+    // ----------------------------------------------------------------------
+    // get meta infos
+    // ----------------------------------------------------------------------
+
+    /**
+     * Get application name
+     * meta -> website
+     *
+     * @see getApps()
+     *
+     * @param  string  $sApp  App ID
+     * @return string
+     */
+    public function getAppLabel(string $sApp): string
+    {
+        return (string) ($this->_aData[$sApp]['meta']['website']??'');
     }
 
     /**
-     * Get unix timestamp when the current appstatus was reached.
+     * Get hostname where the application runs
+     * meta -> host
+     *
+     * @see getApps()
+     *
+     * @param  string  $sApp  App ID
+     * @return string
+     */
+    public function getAppHost(string $sApp): string
+    {
+        return (string) ($this->_aData[$sApp]['meta']['host']??'');
+    }
+
+    /**
+     * Get hard state of an application
+     * It returns RESULT_UNKNOWN if not found.
+     *
+     * @see getApps()
+     *
+     * @param  string  $sApp  App ID
+     * @return int
+     */
+    public function getAppResultHard(string $sApp): int
+    {
+        return (int) ($this->_aData[$sApp]['state']["result-hard"] ?? RESULT_UNKNOWN);
+    }
+
+    /**
+     * Get hard state of an application
+     * It returns RESULT_UNKNOWN if not found.
+     *
+     * @see getApps()
+     *
+     * @param  string  $sApp  App ID
+     * @return int
+     */
+    public function getAppResultSoft(string $sApp): int
+    {
+        return (int) ($this->_aData[$sApp]['state']["result-soft"] ?? RESULT_UNKNOWN);
+    }
+
+    /**
+     * Get hard state of an application
+     * It returns an empty list if not found.
+     *
+     * @see getApps()
+     *
+     * @param  string  $sApp  App ID
+     * @return array
+     */
+    public function getAppLastResponses(string $sApp): array
+    {
+        return (array) ($this->_aData[$sApp]['state']["lastresponses"] ?? []);
+    }
+
+    /**
+     * Get unix timestamp when the current appstatus was reached (hard state).
      * It returns -1 if not found.
-     * 
+     *
      * @see getApps()
      * @see getAppResult()
-     * 
+     *
      * @param  string  $sApp  App ID
      * @return int
      */
     public function getAppResultSince(string $sApp): int
     {
-        return $this->_aData[$sApp]['since'] ?? -1;
+        // "since" is deprecated
+        // return (int) $this->_aData[$sApp]['since'] ?? -1;
+        return (int) $this->_aData[$sApp]['state']["result-hard-since"] ?? -1;
     }
 
     /**
      * Get the worst app result in the group
-     * 
+     *
      * @return int
      */
     public function getGroupResult(): int
@@ -629,7 +724,7 @@ class appmonitorapi
         }
         $iResult = 0;
         foreach ($this->_aData as $aResult) {
-            $iResult = max($iResult, $aResult['meta']['result']);
+            $iResult = max($iResult, (int) $aResult['meta']['result'] ?? false);
         }
         return $iResult;
     }
