@@ -184,6 +184,8 @@ if ($bShowLegend) {
 
         <?php echo date("H:i") . " <br><br>$sOut" ?>
     </main>
+    <br>
+    <a href="https://github.com/iml-it/appmonitor-api-client" target="_blank">Github: appmonitor-api-client</a>
 </body>
 
 </html>
