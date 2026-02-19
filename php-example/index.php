@@ -34,7 +34,11 @@
  * 2024-11-14  1.0  axel.hahn@unibe.ch  first lines
  * 2024-11-15  1.1  axel.hahn@unibe.ch  add showMessage; show total status of a group
  * 2024-11-20  1.2  axel.hahn@unibe.ch  use getAppMeta instead of getAppData; update output of errror messages
+ * 2026-02-19  1.3  axel.hahn@unibe.ch  use methods to read meta data per app
  */
+
+$bShowErrorDetails = true;
+$bShowLegend = true;
 
 require '../php-class/appmonitorapi.class.php';
 
@@ -42,17 +46,15 @@ require '../php-class/appmonitorapi.class.php';
  * Return codes of the IML appmonitor and their meaning
  * @var array
  */
-$aReturncodes=[
+$aReturncodes = [
     0 => 'OK',
     1 => 'Unknown',
     2 => 'Warning',
     3 => 'Error',
 ];
 
-$sOut='';
-$sMessages='';
-
-$bShowErrorDetails=true;
+$sOut = '';
+$sMessages = '';
 
 // ----------------------------------------------------------------------
 // FUNCTIONS
@@ -67,13 +69,12 @@ $bShowErrorDetails=true;
 function renderApp_lines(array $aAppdata): string
 {
     global $aReturncodes;
-    $sReturn='';
 
-    $iResult=$aAppdata['meta']['result'];
-    $sResult=$aReturncodes[$iResult] ?? '??';
-    $sHost=$aAppdata['meta']['host'];
-    $sAppname=$aAppdata['meta']['website'];
-    $sSince="since ".date("Y-m-d H:i", $aAppdata['since']);
+    $iResult = $aAppdata['result'];
+    $sResult = $aReturncodes[$iResult] ?? '??';
+    $sHost = $aAppdata['host'];
+    $sAppname = $aAppdata['website'];
+    $sSince = "since " . date("Y-m-d H:i", $aAppdata['since']);
     return "<div class=\"app result-$iResult\">
 
         <span class=\"resultlabel\">$sResult</span>
@@ -101,65 +102,62 @@ function showMessage(int $iLevel, string $sMessage): string
 // ----------------------------------------------------------------------
 
 // ----- Init
-$aConfig=include 'config.php';
+$aConfig = include 'config.php';
 $api = new appmonitorapi($aConfig['appmonitor']);
 
 // ----- Loop over group emtries
-foreach($aConfig['groups'] as $aGroup )
-{
+foreach ($aConfig['groups'] as $aGroup) {
     $api->fetchByTags($aGroup['tags']);
 
     // --- check errors
-    if ( count($api->getErrors()) > 0 ) {
-        $sMessages.="⚠️ Warning: Currently not all information is available from the monitoring system. The shown status is incomplete.<br><br>";
-        if($bShowErrorDetails)
-        {
-            $sMessages.='<blockquote>';
-            foreach ($api->getErrors() as $aError){
-                $sMessages.=showMessage(3, "❌ $aError[url]<br>"
-                    .($aError['errormessage'] ? "<strong>$aError[errormessage]</strong>" : "")
-                    .($aError["curlerrormsg"] ? "Curl error: $aError[curlerrormsg]<br>" : "")
-                    .($aError['response_header'] ? "<pre>$aError[response_header]</pre>" : "")
-                    ."$aError[response_body]"
+    if (count($api->getErrors()) > 0) {
+        $sMessages .= "⚠️ Warning: Currently not all information is available from the monitoring system. The shown status is incomplete.<br><br>";
+        if ($bShowErrorDetails) {
+            $sMessages .= '<blockquote>';
+            foreach ($api->getErrors() as $aError) {
+                $sMessages .= showMessage(
+                    3,
+                    "❌ $aError[url]<br>"
+                    . ($aError['errormessage'] ? "<strong>$aError[errormessage]</strong>" : "")
+                    . ($aError["curlerrormsg"] ? "Curl error: $aError[curlerrormsg]<br>" : "")
+                    . ($aError['response_header'] ? "<pre>$aError[response_header]</pre>" : "")
+                    . "$aError[response_body]"
                 );
             }
-            $sMessages.='</blockquote><br>';
+            $sMessages .= '</blockquote><br>';
         }
     }
 
     // --- generate output
-    $sOutGroup='';
-    foreach($api->getApps() as $sAppId)
-    {
-        $aAppdata=$api->getAppData($sAppId);
-        $sOutGroup.=''
-            // for debugging remove next comment
-            // .'<pre>'.print_r($aAppdata, 1).'</pre>'
-            .renderApp_lines($aAppdata)
+    $sOutGroup = '';
+    foreach ($api->getApps() as $sAppId) {
+        $sOutGroup .= ''
+            . renderApp_lines([
+                'website' => $api->getAppLabel((string) $sAppId),
+                'host' => $api->getAppHost((string) $sAppId),
+                'result' => $api->getAppResultHard((string) $sAppId),
+                'since' => (int) $api->getAppResultSince((string) $sAppId),
+            ]);
         ;
-    };
+    }
 
-    $iResulOfGroup=$api->getGroupResult();
-    $sOut.="<h2><span class=\"result-$iResulOfGroup\">"
-        .($aReturncodes[$iResulOfGroup] ?? '??')
-        ."</span> $aGroup[label]</h2>"
-        .$sOutGroup
+    $iResulOfGroup = $api->getGroupResult();
+    $sOut .= "<h2><span class=\"result-$iResulOfGroup\">"
+        . ($aReturncodes[$iResulOfGroup] ?? '??')
+        . "</span> $aGroup[label]</h2>"
+        . $sOutGroup
     ;
 }
 
 
 // --- Legend
-if($bShowErrorDetails)
-{
-    $sOut.='<br><h2>Visualization of all return codes</h2><br>';
-    foreach($aReturncodes as $returncode => $sLabel)
-    {
-        $sOut.= renderApp_lines([
-            'meta' => [
-                'website' => "Test website",
-                'host' => "srv-$returncode",
-                'result' => $returncode,                    
-            ],
+if ($bShowLegend) {
+    $sOut .= '<br><h2>Visualization of all return codes</h2><br>';
+    foreach ($aReturncodes as $returncode => $sLabel) {
+        $sOut .= renderApp_lines([
+            'website' => "Test website",
+            'host' => "srv-$returncode",
+            'result' => $returncode,
             'since' => time(),
         ]);
     }
@@ -172,7 +170,8 @@ if($bShowErrorDetails)
 
 ?><!doctype html>
 <html>
-    <meta http-equiv="refresh" content="30">
+<meta http-equiv="refresh" content="30">
+
 <head>
     <title>Health monitor</title>
     <link rel="stylesheet" href="main.css">
@@ -180,10 +179,13 @@ if($bShowErrorDetails)
 
 <body>
     <main>
-    <?php echo $sMessages ?>
-    <h1>Health monitor</h1>
+        <?php echo $sMessages ?>
+        <h1>Health monitor</h1>
 
-    <?php echo date("H:i") . " <br><br>$sOut" ?>
+        <?php echo date("H:i") . " <br><br>$sOut" ?>
     </main>
+    <br>
+    <a href="https://github.com/iml-it/appmonitor-api-client" target="_blank">Github: appmonitor-api-client</a>
 </body>
+
 </html>
