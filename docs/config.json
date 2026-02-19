@@ -1,5 +1,5 @@
 {
-    "title": "IML Appmonitor - API Client",
+    "title": "Appmonitor-API Client",
     "author": "Axel Hahn",
     "tagline": "Client implementation to acess the IML Appmonitor API",
     "ignore": {

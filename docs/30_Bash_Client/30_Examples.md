@@ -1,45 +1,4 @@
-## Example bash script
-
-This example to access the appmonitor url with a bash script.
-
-### Update config
-
-Copy `api_config.sh.dist` to `api_config.sh` (without .dist) and edit connection details:
-
-```txt
-AM_APIURL="http://localhost:8001"
-AM_APIUSER="api-test"
-AM_APISECRET="tryme"
-```
-
-### CLI usage
-
-#### Get help
-
-Use the parameter `-h`to get a short help.
-
-`./api.sh -h`
-
-```txt
-APPMONITOR API CLIENT :: Bash
-
-SYNTAX
-    api.sh [OPTIONS] [URL]
-
-OPTIONS
-    -h|--help      show this help and exit
-    -d|--debug     show more output
-
-EXAMPLES
-    api.sh /api/v1/apps/tags 
-                   list all tags
-
-    api.sh /api/v1/apps/tags/monitoring/meta
-                   Get metadata of all apps with tag 'monitoring'
-
-    api.sh /api/v1/apps/tags/monitoring,live/meta
-                   Get metadata of all apps with tags 'monitoring' and 'live'
-```
+## Examples
 
 #### Start
 

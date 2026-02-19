@@ -1,16 +1,27 @@
-# PHP: Appmonitor api class
-
-You can use this class in your custom output page for monitoring.
-
-Documentation for the class: [appmonitorapi.class.php.md](appmonitorapi.class.php.md)
-
 ## Usage
 
-Here you find short snippets you can start with.
+### Initialize
 
-In the `php-example` directory is a simplified health monitor for customers with a reduced the detail level - without technical details from your environment.
+You need to load the class and instanciate it with the conection config.
+
+```php
+require 'vendor/appmonitor-api-client/appmonitorapi.class.php';
+
+$api = new appmonitorapi([
+    'apiurl'=>'http://appmonitor.example.com/api/v1',
+    'user'=>'api-test',
+    'secret'=>'tryme',
+]);
+```
 
 ### Fetch data
+
+| Method                           | Type  | Description
+|--                                |--     |--
+| `fetchByTags(<array>, [<what>])` | void  | fetch data of all apps that match the given tags with AND condition<br>the 2nd parameter is one of public (default) \| all \| meta \| checks
+| `getAllTags()`                   | array | Get a list of known tags
+
+Example code:
 
 ```php
 
@@ -51,8 +62,9 @@ if ( count($api->getErrors()) > 0 ) {
 
 ### Total status of all apps
 
-```php
+You can get the total status which is the worst value of all apps.
 
+```php
 echo "Status total: " . $aReturncodes[$api->getGroupResult()]. PHP_EOL;
 ```
 
