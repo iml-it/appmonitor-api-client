@@ -724,7 +724,7 @@ class appmonitorapi
         }
         $iResult = 0;
         foreach ($this->_aData as $aResult) {
-            $iResult = max($iResult, (int) $aResult['meta']['result'] ?? false);
+            $iResult = max($iResult, (int) $aResult['state']['result-hard'] ?? false);
         }
         return $iResult;
     }
